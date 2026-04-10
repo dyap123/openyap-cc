@@ -1430,7 +1430,7 @@ function renderTools() {
   const d = state.tools;
   if (!d) { c.innerHTML = cardSkeleton('Tools', '🔧'); return; }
   if (d.error) { c.innerHTML = errorCard('Tools', '🔧', d.error, SHEETS.tools); return; }
-  const fmtDollar = n => '$' + (n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toFixed(0));
+  const fmtDollar = n => { n = parseFloat(n) || 0; return '$' + (n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toFixed(0)); };
   // Status pills
   const statusPills = Object.entries(d.statusCounts || {}).map(([s, n]) => {
     const lo = s.toLowerCase();
