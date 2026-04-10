@@ -555,24 +555,6 @@ body.light .sheet-link:hover { color: #fff; }
 }
 .card-meta .jp { font-size: 7px; opacity: 0.4; display: block; margin-top: 2px; }
 
-/* ── Concrete iframe ──────────────────────────────────────────── */
-.concrete-iframe-wrap {
-  flex: 1;
-  min-height: 200px;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid var(--card-border);
-  background: #000;
-  margin: 4px 0;
-}
-.concrete-iframe-wrap iframe {
-  width: 100%;
-  height: 100%;
-  min-height: 200px;
-  border: none;
-  display: block;
-}
-
 /* Loading skeleton */
 .skeleton {
   background: linear-gradient(90deg, var(--accent1-06) 25%, var(--accent1-10) 50%, var(--accent1-06) 75%);
@@ -1208,7 +1190,7 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
   <main class="grid-wrap">
     <div class="card-grid" id="cardGrid">
       <div class="card" id="card-embeds"><div class="card-head"><div class="card-title-row"><span class="card-title">Embeds</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card span2" id="card-concrete"><div class="card-head"><div class="card-title-row"><span class="card-title">Concrete</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-concrete"><div class="card-head"><div class="card-title-row"><span class="card-title">Concrete</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-submittals"><div class="card-head"><div class="card-title-row"><span class="card-title">Submittals & RFIs</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-tools"><div class="card-head"><div class="card-title-row"><span class="card-title">Tools</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-acp"><div class="card-head"><div class="card-title-row"><span class="card-title">ACP Coordination</span></div></div><div class="skeleton" style="height:120px"></div></div>
@@ -1508,9 +1490,12 @@ async function loadTakeoff() {
       if (d instanceof Date && !isNaN(d) && d >= today) {
         if (d <= weekFromNow) scheduled++;
         upcoming.push({
-          date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
           sect: String(row[sectIdx] ?? ''),
-          tot: parseFloat(row[totIdx]) || 0,
+          cy8: Math.round(parseFloat(row[cy8Idx]) || 0),
+          cy5: Math.round(parseFloat(row[cy5Idx]) || 0),
+          slurry: Math.round(parseFloat(row[slIdx]) || 0),
+          tot: Math.round(parseFloat(row[totIdx]) || 0),
           ts: d.getTime(),
         });
       }
@@ -1522,7 +1507,7 @@ async function loadTakeoff() {
       slurry: Math.round(sl),
       total: Math.round(cy8 + cy5 + sl),
       scheduledThisWeek: scheduled,
-      upcoming: upcoming.slice(0, 3),
+      upcoming: upcoming.slice(0, 5),
       fetched: Date.now(),
     };
   } catch (e) {
@@ -1581,6 +1566,7 @@ async function refreshAll() {
     loadTools().catch(e => console.warn('tools failed', e)),
     loadSubmittals().catch(e => console.warn('submittals failed', e)),
     loadACP().catch(e => console.warn('acp failed', e)),
+    loadTakeoff().catch(e => console.warn('takeoff failed', e)),
     loadOrders().catch(e => console.warn('orders failed', e)),
   ];
   await Promise.allSettled(loaders);
@@ -1695,25 +1681,52 @@ function renderEmbeds() {
   });
 }
 
-// ── CONCRETE (CUP Dashboard embed + Orders) ──
+// ── CONCRETE (Pour Lookahead + Orders) ──
 function renderConcrete() {
   const c = document.getElementById('card-concrete');
+  const t = state.takeoff;
   const o = state.orders;
+  if (!t && !o) { c.innerHTML = cardSkeleton('Concrete'); return; }
+  const hasT = t && !t.error;
   const hasO = o && !o.error;
+  const next = hasT && t.upcoming && t.upcoming.length ? t.upcoming[0] : null;
+  const rest = hasT && t.upcoming ? t.upcoming.slice(1) : [];
+
   c.innerHTML = `
     <div class="card-head">
       <div class="card-title-row"><span class="card-title">Concrete</span><span class="jp-title">コンクリート</span></div>
-      <div class="card-meta">cup-dashboard</div>
+      <div class="card-meta">${fmtTime(hasT ? t.fetched : (hasO ? o.fetched : null))}</div>
     </div>
     <div class="card-body">
-      ${hasO ? `<div class="metric-row">
+      ${hasT ? `<div class="headline-row"><span class="headline">${fmtNum(t.total)}</span><span class="headline-sub">CY total takeoff</span></div>` : ''}
+      ${hasO ? `<div class="metric-row" style="margin-top:6px">
         <div class="metric"><span class="metric-val">${o.count}</span><span class="metric-label">Active Orders</span></div>
         <div class="metric"><span class="metric-val green">${o.todayCount}</span><span class="metric-label">Today</span></div>
         <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtNum(o.totalCY)}</span><span class="metric-label">CY Ordered</span></div>
       </div>` : ''}
-      <div class="concrete-iframe-wrap">
-        <iframe src="https://dyap123.github.io/cup-dashboard/#pourGrid" loading="lazy"></iframe>
-      </div>
+      ${next ? `
+      <div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--accent1-06);border:1px solid var(--accent1-10)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent1)">Next Pour</span>
+          <span class="chip cyan">${next.date}</span>
+          <span style="font-size:11px;color:var(--text);font-weight:600">${next.sect}</span>
+        </div>
+        <div class="metric-row">
+          <div class="metric"><span class="metric-val" style="font-size:28px">${next.tot}</span><span class="metric-label">CY Total</span></div>
+          ${next.cy8 ? `<div class="metric"><span class="metric-val red" style="font-size:18px">${next.cy8}</span><span class="metric-label">8000 PSI</span></div>` : ''}
+          ${next.cy5 ? `<div class="metric"><span class="metric-val" style="font-size:18px;color:var(--accent2)">${next.cy5}</span><span class="metric-label">5000 PSI</span></div>` : ''}
+          ${next.slurry ? `<div class="metric"><span class="metric-val amber" style="font-size:18px">${next.slurry}</span><span class="metric-label">Slurry</span></div>` : ''}
+          <div class="metric"><span class="metric-val" style="font-size:18px">${Math.ceil(next.tot / 10)}</span><span class="metric-label">Est. Trucks</span></div>
+        </div>
+      </div>` : '<div style="font-size:11px;color:var(--text-muted);padding:10px 0">No upcoming pours scheduled</div>'}
+      ${rest.length ? `<div class="mini-list" style="margin-top:8px">
+        <div class="metric-label" style="margin-bottom:4px">Pour Lookahead${hasT && t.scheduledThisWeek ? ' · ' + t.scheduledThisWeek + ' this week' : ''}</div>
+        ${rest.map(u => `<div class="mini-list-item">
+          <span class="chip cyan">${u.date}</span>
+          <span class="ml-name">${u.sect}</span>
+          <span class="ml-val" style="white-space:nowrap">${u.tot} CY</span>
+        </div>`).join('')}
+      </div>` : ''}
     </div>
     <div class="card-foot">
       <a href="https://dyap123.github.io/cup-dashboard/" target="_blank" class="sheet-link">CUP Dashboard ↗</a>
