@@ -338,7 +338,7 @@ body.light .header {
   vertical-align: middle;
   box-shadow: 0 0 8px var(--accent2-06);
 }
-.card-title-row { display: flex; align-items: center; gap: 8px; }
+.card-title-row { display: flex; align-items: center; gap: 10px; }
 .card-icon { font-size: 14px; opacity: 0.7; }
 .card-meta {
   font-family: 'JetBrains Mono', monospace;
@@ -525,6 +525,52 @@ body.light .sheet-link:hover { color: #fff; }
   color: var(--text-muted);
   text-align: center;
   margin-top: 4px;
+}
+
+/* ── Japanese decorative text ──────────────────────────────────── */
+.jp {
+  font-size: 8px;
+  font-weight: 400;
+  color: var(--text-muted);
+  opacity: 0.5;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.jp-title {
+  font-size: 10px;
+  color: var(--accent2);
+  opacity: 0.35;
+  letter-spacing: 2px;
+  font-weight: 400;
+}
+.jp-brand {
+  font-size: 11px;
+  color: var(--accent3);
+  opacity: 0.5;
+  letter-spacing: 3px;
+  -webkit-text-fill-color: initial;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+}
+.card-meta .jp { font-size: 7px; opacity: 0.4; display: block; margin-top: 2px; }
+
+/* ── Concrete iframe ──────────────────────────────────────────── */
+.concrete-iframe-wrap {
+  flex: 1;
+  min-height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  background: #000;
+  margin: 4px 0;
+}
+.concrete-iframe-wrap iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  border: none;
+  display: block;
 }
 
 /* Loading skeleton */
@@ -1070,7 +1116,7 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
 
 <!-- ─── LEFT RAIL: BLACKJACK ─── -->
 <div id="bjToggle" onclick="toggleBJ()">
-  <span class="rail-label">♠ BLACKJACK</span>
+  <span class="rail-label">♠ ブラック<br>ジャック</span>
 </div>
 <aside id="bjPanel">
   <div class="bj-head">
@@ -1112,7 +1158,7 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
 
 <!-- ─── RIGHT RAIL: ALFRED ─── -->
 <div id="alfredToggle" onclick="toggleAlfred()">
-  <span class="rail-label">PIT CREW</span>
+  <span class="rail-label">ピット<br>クルー</span>
 </div>
 <aside id="alfredSidebar">
   <div class="alf-head">
@@ -1137,6 +1183,7 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
     <div class="brand">
       <span class="brand-icon">🏎️</span>
       <span>OPENYAP COMMAND CENTER</span>
+      <span class="jp-brand">指令室</span>
     </div>
     <div class="header-actions">
       <span class="status-pill" id="statusPill">Loading...</span>
@@ -1150,18 +1197,18 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
   </header>
 
   <div class="kpi-bar" id="kpiBar">
-    <div class="kpi-item"><span class="kpi-val" id="kpiEmbedPct">--</span><span class="kpi-label">Embeds Installed</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpiRfiOpen">--</span><span class="kpi-label">Open RFIs</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpiToolsOnSite">--</span><span class="kpi-label">Tools On Site</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpiConcreteOrdered">--</span><span class="kpi-label">CY Ordered</span></div>
-    <div class="kpi-item"><span class="kpi-val" id="kpiPilePct">--</span><span class="kpi-label">Avg Pile Reduced</span></div>
-    <div class="kpi-item kpi-live" id="kpiLive"><span class="kpi-val" id="kpiLiveVal">--</span><span class="kpi-label">Live Pour</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiEmbedPct">--</span><span class="kpi-label">Embeds Installed <span class="jp">埋込</span></span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiRfiOpen">--</span><span class="kpi-label">Open RFIs <span class="jp">質問</span></span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiToolsOnSite">--</span><span class="kpi-label">Tools On Site <span class="jp">工具</span></span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiConcreteOrdered">--</span><span class="kpi-label">CY Ordered <span class="jp">注文</span></span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiPilePct">--</span><span class="kpi-label">Avg Pile Reduced <span class="jp">杭</span></span></div>
+    <div class="kpi-item kpi-live" id="kpiLive"><span class="kpi-val" id="kpiLiveVal">--</span><span class="kpi-label">Live Pour <span class="jp">打設</span></span></div>
   </div>
 
   <main class="grid-wrap">
     <div class="card-grid" id="cardGrid">
       <div class="card" id="card-embeds"><div class="card-head"><div class="card-title-row"><span class="card-title">Embeds</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card" id="card-concrete"><div class="card-head"><div class="card-title-row"><span class="card-title">Concrete</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card span2" id="card-concrete"><div class="card-head"><div class="card-title-row"><span class="card-title">Concrete</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-submittals"><div class="card-head"><div class="card-title-row"><span class="card-title">Submittals & RFIs</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-tools"><div class="card-head"><div class="card-title-row"><span class="card-title">Tools</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-acp"><div class="card-head"><div class="card-title-row"><span class="card-title">ACP Coordination</span></div></div><div class="skeleton" style="height:120px"></div></div>
@@ -1534,7 +1581,6 @@ async function refreshAll() {
     loadTools().catch(e => console.warn('tools failed', e)),
     loadSubmittals().catch(e => console.warn('submittals failed', e)),
     loadACP().catch(e => console.warn('acp failed', e)),
-    loadTakeoff().catch(e => console.warn('takeoff failed', e)),
     loadOrders().catch(e => console.warn('orders failed', e)),
   ];
   await Promise.allSettled(loaders);
@@ -1599,7 +1645,7 @@ function renderEmbeds() {
   const instPct = d.total ? Math.round(d.installed / d.total * 100) : 0;
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">Embeds</span></div>
+      <div class="card-title-row"><span class="card-title">Embeds</span><span class="jp-title">埋込み金物</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
@@ -1649,61 +1695,30 @@ function renderEmbeds() {
   });
 }
 
-// ── CONCRETE (merged Takeoff + Orders) ── Horizontal Bar
+// ── CONCRETE (CUP Dashboard embed + Orders) ──
 function renderConcrete() {
   const c = document.getElementById('card-concrete');
-  const t = state.takeoff;
   const o = state.orders;
-  if (!t && !o) { c.innerHTML = cardSkeleton('Concrete'); return; }
-  const hasT = t && !t.error;
   const hasO = o && !o.error;
-  const total = hasT ? t.total : 0;
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">Concrete</span></div>
-      <div class="card-meta">${fmtTime((hasT ? t.fetched : null) || (hasO ? o.fetched : null))}</div>
+      <div class="card-title-row"><span class="card-title">Concrete</span><span class="jp-title">コンクリート</span></div>
+      <div class="card-meta">cup-dashboard</div>
     </div>
     <div class="card-body">
-      ${hasT ? `<div class="headline-row"><span class="headline">${fmtNum(total)}</span><span class="headline-sub">CY takeoff</span></div>` : ''}
-      ${hasT ? `<div style="margin:8px 0"><canvas id="chartConcrete" height="100"></canvas></div>` : ''}
-      ${hasO ? `<div class="metric-row" style="margin-top:6px">
+      ${hasO ? `<div class="metric-row">
         <div class="metric"><span class="metric-val">${o.count}</span><span class="metric-label">Active Orders</span></div>
         <div class="metric"><span class="metric-val green">${o.todayCount}</span><span class="metric-label">Today</span></div>
         <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtNum(o.totalCY)}</span><span class="metric-label">CY Ordered</span></div>
       </div>` : ''}
-      ${hasT && t.upcoming && t.upcoming.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Upcoming${t.scheduledThisWeek ? ' · ' + t.scheduledThisWeek + ' this week' : ''}</div>
-        ${t.upcoming.slice(0, 3).map(u => `<div class="mini-list-item"><span class="chip cyan">${u.date}</span><span class="ml-name">${u.sect}</span><span class="ml-val">${u.tot} CY</span></div>`).join('')}
-      </div>` : ''}
+      <div class="concrete-iframe-wrap">
+        <iframe src="https://dyap123.github.io/cup-dashboard/#pourGrid" loading="lazy"></iframe>
+      </div>
     </div>
     <div class="card-foot">
-      <a href="${SHEET_LINK(SHEETS.takeoff)}" target="_blank" class="sheet-link">Takeoff ↗</a>
+      <a href="https://dyap123.github.io/cup-dashboard/" target="_blank" class="sheet-link">CUP Dashboard ↗</a>
       <a href="${SHEET_LINK(SHEETS.orders)}" target="_blank" class="sheet-link">Orders ↗</a>
     </div>`;
-  if (hasT) {
-    getOrCreateChart('chartConcrete', {
-      type: 'bar',
-      data: {
-        labels: ['8000 PSI', '5000 PSI', 'Slurry'],
-        datasets: [{
-          data: [t.cy8000, t.cy5000, t.slurry],
-          backgroundColor: [getAccent1(), getAccent2(), getAccent3()],
-          borderRadius: 4,
-          barPercentage: 0.6,
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { display: true, grid: { color: chartGridColor() }, border: { color: chartBorderColor() }, ticks: { callback: v => v + ' CY' } },
-          y: { display: true, grid: { display: false }, border: { color: chartBorderColor() } }
-        },
-        plugins: { tooltip: { callbacks: { label: ctx => ctx.raw + ' CY' } } }
-      }
-    });
-  }
 }
 
 // ── SUBMITTALS & RFIs ── Dual Doughnut
@@ -1715,7 +1730,7 @@ function renderSubmittals() {
   const subClosed = Math.max(0, d.submittalTotal - d.submittalOpen);
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">Submittals & RFIs</span></div>
+      <div class="card-title-row"><span class="card-title">Submittals & RFIs</span><span class="jp-title">提出・質問</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
@@ -1772,7 +1787,7 @@ function renderTools() {
   const topCats = (d.topCats || []).slice(0, 5);
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">Tools</span></div>
+      <div class="card-title-row"><span class="card-title">Tools</span><span class="jp-title">工具管理</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
@@ -1820,7 +1835,7 @@ function renderACP() {
   const worst = d.worst || [];
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">ACP Coordination</span></div>
+      <div class="card-title-row"><span class="card-title">ACP Coordination</span><span class="jp-title">杭調整</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
@@ -1876,7 +1891,7 @@ function renderOverview() {
 
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">Project Health</span></div>
+      <div class="card-title-row"><span class="card-title">Project Health</span><span class="jp-title">健全性</span></div>
       <div class="card-meta">composite score</div>
     </div>
     <div class="card-body" style="align-items:center;justify-content:center">
@@ -1922,7 +1937,7 @@ function renderLive() {
   const isActive = lp && lp.pourId;
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-title">Live Pours</span></div>
+      <div class="card-title-row"><span class="card-title">Live Pours</span><span class="jp-title">ライブ打設</span></div>
       <div class="card-meta">cup-dashboard</div>
     </div>
     <div class="card-body">
