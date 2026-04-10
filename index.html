@@ -13,6 +13,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -31,28 +32,30 @@
 /* ── Theme variables ────────────────────────────────────────────── */
 /* Racing-inspired palette — carbon fiber dark, matte silver, racing red, checkered amber */
 :root {
-  --bg:#0c0c0f;
-  --panel-1:rgba(18,18,22,0.90);
-  --panel-2:rgba(10,10,14,0.95);
-  --accent1:#E11D48;  /* racing red */
-  --accent2:#94A3B8;  /* matte silver */
-  --accent3:#FBBF24;  /* checkered amber/gold */
-  --accent1-10:rgba(225,29,72,0.10);
-  --accent1-06:rgba(225,29,72,0.06);
-  --accent2-10:rgba(148,163,184,0.10);
-  --accent3-10:rgba(251,191,36,0.10);
-  --card-border:rgba(255,255,255,0.06);
-  --card-hover:rgba(225,29,72,0.18);
-  --text:#F1F1F3;
-  --text-body:#A8ABB5;
-  --text-muted:#5A5D6A;
+  --bg:#0A0F1E;
+  --panel-1:rgba(12,18,38,0.92);
+  --panel-2:rgba(8,12,28,0.96);
+  --accent1:#DB0A40;  /* Red Bull red */
+  --accent2:#00F0FF;  /* JDM neon cyan */
+  --accent3:#FFD700;  /* Red Bull gold */
+  --accent4:#FF2D78;  /* JDM hot pink */
+  --accent1-10:rgba(219,10,64,0.10);
+  --accent1-06:rgba(219,10,64,0.06);
+  --accent2-10:rgba(0,240,255,0.10);
+  --accent2-06:rgba(0,240,255,0.06);
+  --accent3-10:rgba(255,215,0,0.10);
+  --card-border:rgba(0,240,255,0.08);
+  --card-hover:rgba(219,10,64,0.18);
+  --text:#F0F2F8;
+  --text-body:#8B92A8;
+  --text-muted:#4A5170;
   --red:#EF4444;
   --green:#22C55E;
-  --yellow:#FBBF24;
-  --glow1:rgba(225,29,72,0.08);
-  --glow2:rgba(148,163,184,0.05);
-  --glow3:rgba(251,191,36,0.04);
-  --body-bg:linear-gradient(160deg,#0c0c0f 0%,#111114 40%,#0e0e12 70%,#0a0a0e 100%);
+  --yellow:#FFD700;
+  --glow1:rgba(219,10,64,0.08);
+  --glow2:rgba(0,240,255,0.05);
+  --glow3:rgba(255,215,0,0.04);
+  --body-bg:linear-gradient(160deg,#0A0F1E 0%,#0D1326 40%,#0B1020 70%,#080C18 100%);
   --ease:cubic-bezier(0.16,1,0.3,1);
 }
 body.light {
@@ -60,11 +63,13 @@ body.light {
   --panel-1:rgba(255,255,255,0.94);
   --panel-2:rgba(248,248,250,0.88);
   --accent1:#BE123C;
-  --accent2:#64748B;
+  --accent2:#0891B2;
   --accent3:#D97706;
+  --accent4:#E11D48;
   --accent1-10:rgba(190,18,60,0.10);
   --accent1-06:rgba(190,18,60,0.05);
-  --accent2-10:rgba(100,116,139,0.08);
+  --accent2-10:rgba(8,145,178,0.08);
+  --accent2-06:rgba(8,145,178,0.05);
   --accent3-10:rgba(217,119,6,0.08);
   --card-border:rgba(0,0,0,0.08);
   --card-hover:rgba(190,18,60,0.16);
@@ -72,7 +77,7 @@ body.light {
   --text-body:#3F4250;
   --text-muted:#8A8D9A;
   --glow1:rgba(190,18,60,0.05);
-  --glow2:rgba(100,116,139,0.04);
+  --glow2:rgba(8,145,178,0.04);
   --glow3:rgba(217,119,6,0.03);
   --body-bg:linear-gradient(160deg,#F4F4F6 0%,#EEEEF2 35%,#F0F0F4 70%,#F2F2F5 100%);
 }
@@ -99,9 +104,9 @@ body {
   top: -20%;
   left: -20%;
   background:
-    radial-gradient(ellipse 600px 500px at 25% 35%, var(--glow2) 0%, transparent 70%),
-    radial-gradient(ellipse 500px 600px at 75% 60%, var(--glow1) 0%, transparent 70%),
-    radial-gradient(ellipse 500px 400px at 50% 80%, var(--glow3) 0%, transparent 70%);
+    radial-gradient(ellipse 600px 500px at 25% 35%, rgba(0,240,255,0.03) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 600px at 75% 25%, rgba(219,10,64,0.05) 0%, transparent 70%),
+    radial-gradient(ellipse 800px 300px at 50% 95%, rgba(0,240,255,0.04) 0%, transparent 60%);
   animation: meshDrift 60s linear infinite alternate;
   will-change: transform;
 }
@@ -109,11 +114,14 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,240,255,0.008) 2px, rgba(0,240,255,0.008) 4px),
+    radial-gradient(circle, rgba(0,240,255,0.015) 1px, transparent 1px);
+  background-size: 100% 4px, 32px 32px;
 }
 body.light .bg-mesh::after {
   background-image: radial-gradient(circle, rgba(0,0,0,0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 @keyframes meshDrift {
   0% { transform: translate3d(0,0,0); }
@@ -140,7 +148,7 @@ body.light .bg-mesh::after {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: linear-gradient(180deg, rgba(10,10,20,0.85), rgba(10,10,20,0.6));
+  background: linear-gradient(180deg, rgba(10,15,30,0.88), rgba(10,15,30,0.65));
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--card-border);
   padding: 14px 20px;
@@ -148,6 +156,16 @@ body.light .bg-mesh::after {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 5%, var(--accent1) 20%, var(--accent3) 50%, var(--accent1) 80%, transparent 95%);
+  opacity: 0.6;
 }
 body.light .header {
   background: linear-gradient(180deg, rgba(245,245,248,0.92), rgba(245,245,248,0.7));
@@ -158,7 +176,10 @@ body.light .header {
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--text);
+  background: linear-gradient(135deg, var(--accent1), var(--accent3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -166,6 +187,9 @@ body.light .header {
 .brand-icon {
   font-size: 20px;
   -webkit-text-fill-color: initial;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .icon-btn {
@@ -248,7 +272,7 @@ body.light .header {
   padding: 18px 18px 16px;
   display: flex;
   flex-direction: column;
-  min-height: 200px;
+  min-height: 320px;
   transition: transform 0.35s var(--ease), box-shadow 0.55s var(--ease);
   overflow: hidden;
 }
@@ -258,14 +282,14 @@ body.light .header {
   inset: -1.5px;
   border-radius: 18px;
   padding: 1.5px;
-  background: linear-gradient(135deg, var(--accent1), var(--accent3), var(--accent2), var(--accent1));
+  background: linear-gradient(135deg, var(--accent2), var(--accent1), var(--accent3), var(--accent2));
   background-size: 300% 300%;
   animation: borderShift 6s ease-in-out infinite;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.15;
   transition: opacity 0.35s;
 }
 @keyframes borderShift {
@@ -286,7 +310,7 @@ body.light .header {
   transform: scale(0.85);
 }
 .card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 48px var(--accent1-10), 0 0 96px var(--accent1-06); }
-.card:hover::before { opacity: 1; }
+.card:hover::before { opacity: 0.8; }
 .card:hover::after { opacity: 0.5; transform: scale(1.05); }
 .card-head {
   display: flex;
@@ -300,7 +324,18 @@ body.light .header {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--accent1);
+  color: var(--accent2);
+}
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: var(--accent2);
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 6px var(--accent2-06);
 }
 .card-title-row { display: flex; align-items: center; gap: 8px; }
 .card-icon { font-size: 14px; opacity: 0.7; }
@@ -395,7 +430,89 @@ body.light .header {
 .chip.green { background: rgba(34,197,94,0.12); color: #22c55e; }
 .chip.red { background: rgba(239,68,68,0.12); color: var(--red); }
 .chip.amber { background: rgba(245,158,11,0.12); color: var(--accent3); }
-.chip.cyan { background: var(--accent2-10); color: var(--accent2); }
+.chip.cyan { background: var(--accent2-06); color: var(--accent2); }
+
+/* ── KPI bar ───────────────────────────────────────────────────── */
+.kpi-bar {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 20px;
+  max-width: 1400px;
+  margin: 12px auto 0;
+  width: 100%;
+}
+.kpi-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  background: var(--panel-1);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(14px);
+}
+.kpi-item:first-child { border-radius: 12px 0 0 12px; }
+.kpi-item:last-child { border-radius: 0 12px 12px 0; }
+.kpi-val {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.kpi-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+}
+.kpi-live .kpi-val { color: var(--green); }
+@media (max-width: 700px) {
+  .kpi-bar { flex-wrap: wrap; gap: 2px; }
+  .kpi-item { flex: 1 1 30%; min-width: 80px; border-radius: 0 !important; }
+  .kpi-item:first-child { border-radius: 8px 0 0 0 !important; }
+  .kpi-item:nth-child(3) { border-radius: 0 8px 0 0 !important; }
+  .kpi-item:nth-child(4) { border-radius: 0 0 0 8px !important; }
+  .kpi-item:last-child { border-radius: 0 0 8px 0 !important; }
+}
+
+/* ── Chart overlays ────────────────────────────────────────────── */
+.chart-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.1;
+  pointer-events: none;
+}
+.chart-center-label span {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  display: block;
+}
+.chart-wrap { position: relative; }
+.dual-donut { display: flex; gap: 16px; align-items: center; justify-content: center; }
+.dual-donut .chart-wrap { flex: 1; max-width: 120px; }
+.dual-donut .donut-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 4px;
+}
 
 /* Loading skeleton */
 .skeleton {
@@ -416,6 +533,7 @@ body.light .header {
 .donut-center-label { font-size: 7px; font-weight: 700; fill: var(--text-muted); text-anchor: middle; text-transform: uppercase; letter-spacing: 1px; }
 
 /* ── Live Pours card ────────────────────────────────────────────── */
+.live-card { min-height: auto !important; }
 .live-card .card-body { gap: 14px; }
 .live-status {
   display: flex;
@@ -456,7 +574,7 @@ body.light .header {
   margin-left: auto;
   padding: 6px 14px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  background: linear-gradient(135deg, var(--accent1), var(--accent3));
   color: #fff;
   border: none;
   font-weight: 700;
@@ -725,9 +843,9 @@ body.light .header {
   transform: translateY(-50%);
   width: 36px;
   height: 90px;
-  background: var(--accent1-10);
+  background: var(--accent2-06);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(99,102,241,0.30);
+  border: 1px solid var(--accent2-10);
   border-right: none;
   border-radius: 12px 0 0 12px;
   cursor: pointer;
@@ -735,11 +853,11 @@ body.light .header {
   align-items: center;
   justify-content: center;
   transition: all 0.3s;
-  box-shadow: 0 0 20px var(--accent1-10);
+  box-shadow: 0 0 20px var(--accent2-06);
 }
 #alfredToggle:hover {
-  background: rgba(99,102,241,0.2);
-  box-shadow: 0 0 30px var(--accent1-10);
+  background: var(--accent2-10);
+  box-shadow: 0 0 30px var(--accent2-10);
 }
 .rail-label {
   writing-mode: vertical-lr;
@@ -750,7 +868,7 @@ body.light .header {
   text-transform: uppercase;
 }
 #bjToggle .rail-label { color: var(--accent3); }
-#alfredToggle .rail-label { color: var(--accent1); }
+#alfredToggle .rail-label { color: var(--accent2); }
 
 #alfredSidebar {
   position: fixed;
@@ -782,7 +900,7 @@ body.light .header {
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 1.5px;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  background: linear-gradient(135deg, var(--accent2), var(--accent1));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1004,27 +1122,37 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
   <header class="header">
     <div class="brand">
       <span class="brand-icon">🏎️</span>
-      <span>OPENYAP PIT LANE</span>
+      <span>OPENYAP COMMAND CENTER</span>
     </div>
     <div class="header-actions">
-      <span class="status-pill" id="statusPill">Loading…</span>
-      <button class="icon-btn" id="refreshBtn" onclick="refreshAll()" title="Refresh all sheets">
+      <span class="status-pill" id="statusPill">Loading...</span>
+      <button class="icon-btn" id="refreshBtn" onclick="refreshAll()" title="Refresh all sheets (R)">
         <span class="material-symbols-outlined">refresh</span>
       </button>
-      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme (T)">
         <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
       </button>
     </div>
   </header>
 
+  <div class="kpi-bar" id="kpiBar">
+    <div class="kpi-item"><span class="kpi-val" id="kpiEmbedPct">--</span><span class="kpi-label">Embeds Installed</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiRfiOpen">--</span><span class="kpi-label">Open RFIs</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiToolsOnSite">--</span><span class="kpi-label">Tools On Site</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiConcreteOrdered">--</span><span class="kpi-label">CY Ordered</span></div>
+    <div class="kpi-item"><span class="kpi-val" id="kpiPilePct">--</span><span class="kpi-label">Avg Pile Reduced</span></div>
+    <div class="kpi-item kpi-live" id="kpiLive"><span class="kpi-val" id="kpiLiveVal">--</span><span class="kpi-label">Live Pour</span></div>
+  </div>
+
   <main class="grid-wrap">
     <div class="card-grid" id="cardGrid">
-      <div class="card" id="card-embeds"><div class="card-head"><div class="card-title-row"><span class="card-icon">🔩</span><span class="card-title">Embeds</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card" id="card-tools"><div class="card-head"><div class="card-title-row"><span class="card-icon">🛠</span><span class="card-title">Tools</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card" id="card-acp"><div class="card-head"><div class="card-title-row"><span class="card-icon">🏁</span><span class="card-title">ACP Coordination</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card" id="card-submittals"><div class="card-head"><div class="card-title-row"><span class="card-icon">📄</span><span class="card-title">Submittals & RFIs</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card" id="card-orders"><div class="card-head"><div class="card-title-row"><span class="card-icon">🏎️</span><span class="card-title">Concrete Ordered</span></div></div><div class="skeleton" style="height:120px"></div></div>
-      <div class="card live-card span3" id="card-live"><div class="card-head"><div class="card-title-row"><span class="card-icon">⚡</span><span class="card-title">Live Pours</span></div></div><div class="skeleton" style="height:60px"></div></div>
+      <div class="card" id="card-embeds"><div class="card-head"><div class="card-title-row"><span class="card-title">Embeds</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-concrete"><div class="card-head"><div class="card-title-row"><span class="card-title">Concrete</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-submittals"><div class="card-head"><div class="card-title-row"><span class="card-title">Submittals & RFIs</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-tools"><div class="card-head"><div class="card-title-row"><span class="card-title">Tools</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-acp"><div class="card-head"><div class="card-title-row"><span class="card-title">ACP Coordination</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-overview"><div class="card-head"><div class="card-title-row"><span class="card-title">Project Health</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card live-card span3" id="card-live"><div class="card-head"><div class="card-title-row"><span class="card-title">Live Pours</span></div></div><div class="skeleton" style="height:60px"></div></div>
     </div>
   </main>
 </div>
@@ -1042,8 +1170,36 @@ function applyTheme(t) {
 function toggleTheme() {
   const cur = localStorage.getItem('cc_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
   applyTheme(cur === 'light' ? 'dark' : 'light');
+  // Destroy chart instances so they re-create with correct theme colors
+  Object.keys(chartInstances).forEach(k => { chartInstances[k].destroy(); delete chartInstances[k]; });
+  if (typeof renderAll === 'function') renderAll();
 }
 applyTheme(localStorage.getItem('cc_theme') || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+
+// ════════════════════════════════════════════════════════════════
+//  CHART.JS SETUP
+// ════════════════════════════════════════════════════════════════
+Chart.defaults.color = '#8B92A8';
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 10;
+Chart.defaults.plugins.legend.display = false;
+Chart.defaults.elements.arc.borderWidth = 0;
+Chart.defaults.animation.duration = 800;
+Chart.defaults.animation.easing = 'easeOutQuart';
+
+const chartInstances = {};
+function getOrCreateChart(canvasId, config) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
+  if (chartInstances[canvasId]) {
+    chartInstances[canvasId].data = config.data;
+    if (config.options) Object.assign(chartInstances[canvasId].options, config.options);
+    chartInstances[canvasId].update();
+    return chartInstances[canvasId];
+  }
+  chartInstances[canvasId] = new Chart(ctx, config);
+  return chartInstances[canvasId];
+}
 
 // ════════════════════════════════════════════════════════════════
 //  FIREBASE
@@ -1251,7 +1407,7 @@ async function loadACP() {
         grid: String(r[1] ?? ''),
         pct: parseFloat(r[9]) || 0,
       })).filter(x => x.pct > 0)
-        .sort((a, b) => b.pct - a.pct).slice(0, 3);
+        .sort((a, b) => b.pct - a.pct).slice(0, 10);
       worst = indexed;
     }
   } catch {}
@@ -1358,6 +1514,7 @@ async function refreshAll() {
     loadTools().catch(e => console.warn('tools failed', e)),
     loadSubmittals().catch(e => console.warn('submittals failed', e)),
     loadACP().catch(e => console.warn('acp failed', e)),
+    loadTakeoff().catch(e => console.warn('takeoff failed', e)),
     loadOrders().catch(e => console.warn('orders failed', e)),
   ];
   await Promise.allSettled(loaders);
@@ -1375,48 +1532,74 @@ function fmtTime(ts) {
   const d = new Date(ts);
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
-function donutSvg(installed, total, accent) {
-  const r = 32, c = 2 * Math.PI * r;
-  const pct = total ? installed / total : 0;
-  const filled = pct * c;
-  return `<svg class="donut-svg" viewBox="0 0 90 90">
-    <circle cx="45" cy="45" r="${r}" stroke="rgba(255,255,255,0.06)" stroke-width="10" fill="none"/>
-    <circle cx="45" cy="45" r="${r}" stroke="${accent}" stroke-width="10" fill="none"
-      stroke-dasharray="${filled.toFixed(2)} ${(c - filled).toFixed(2)}"
-      transform="rotate(-90 45 45)" stroke-linecap="round"/>
-    <text x="45" y="42" class="donut-center">${total ? Math.round(pct * 100) : 0}<tspan font-size="12">%</tspan></text>
-    <text x="45" y="58" class="donut-center-label">${installed}/${total}</text>
-  </svg>`;
+const fmtDollar = n => { n = parseFloat(n) || 0; return '$' + (n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toFixed(0)); };
+const fmtNum = n => { n = parseInt(n) || 0; return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : String(n); };
+
+// Chart color helpers (respond to theme)
+function isLight() { return document.body.classList.contains('light'); }
+function chartGridColor() { return isLight() ? 'rgba(0,0,0,0.06)' : 'rgba(0,240,255,0.04)'; }
+function chartBorderColor() { return isLight() ? 'rgba(0,0,0,0.08)' : 'rgba(0,240,255,0.06)'; }
+function chartEmptyColor() { return isLight() ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)'; }
+function getAccent1() { return isLight() ? '#BE123C' : '#DB0A40'; }
+function getAccent2() { return isLight() ? '#0891B2' : '#00F0FF'; }
+function getAccent3() { return isLight() ? '#D97706' : '#FFD700'; }
+
+// ── KPI BAR ──
+function renderKPI() {
+  const ep = document.getElementById('kpiEmbedPct');
+  const rfi = document.getElementById('kpiRfiOpen');
+  const tools = document.getElementById('kpiToolsOnSite');
+  const cy = document.getElementById('kpiConcreteOrdered');
+  const pile = document.getElementById('kpiPilePct');
+  const live = document.getElementById('kpiLiveVal');
+
+  if (state.embeds) ep.textContent = state.embeds.total ? Math.round(state.embeds.installed / state.embeds.total * 100) + '%' : '0%';
+  if (state.submittals) rfi.textContent = state.submittals.rfiOpen;
+  if (state.tools) tools.textContent = state.tools.onSite;
+  if (state.orders) cy.textContent = fmtNum(state.orders.totalCY);
+  if (state.acp) pile.textContent = Math.round(state.acp.avgReduced * 100) + '%';
+  const lp = state.livePour;
+  if (lp && lp.pourId) {
+    live.textContent = lp.pourId;
+    live.style.color = 'var(--green)';
+  } else {
+    live.textContent = 'NONE';
+    live.style.color = 'var(--text-muted)';
+  }
 }
 
+// ── EMBEDS ── Doughnut + Progress Bars
 function renderEmbeds() {
   const c = document.getElementById('card-embeds');
   const d = state.embeds;
-  if (!d) { c.innerHTML = cardSkeleton('Embeds', '🔩'); return; }
+  if (!d) { c.innerHTML = cardSkeleton('Embeds'); return; }
   const topAreas = Object.entries(d.byArea)
-    .sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+    .sort((a, b) => b[1].total - a[1].total).slice(0, 3);
+  const delPct = d.total ? Math.round(d.delivered / d.total * 100) : 0;
+  const instPct = d.total ? Math.round(d.installed / d.total * 100) : 0;
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">🔩</span><span class="card-title">Embeds</span></div>
+      <div class="card-title-row"><span class="card-title">Embeds</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
-      <div class="headline-row"><span class="headline">${d.total}</span><span class="headline-sub">total embeds</span></div>
-      <div class="metric-row" style="margin-top:10px">
+      <div class="metric-row">
+        <div class="metric"><span class="metric-val">${d.total}</span><span class="metric-label">Total</span></div>
         <div class="metric"><span class="metric-val" style="color:var(--accent2)">${d.delivered}</span><span class="metric-label">Delivered</span></div>
         <div class="metric"><span class="metric-val green">${d.installed}</span><span class="metric-label">Installed</span></div>
-        <div class="metric"><span class="metric-val amber">${d.toDeliver}</span><span class="metric-label">To Deliver</span></div>
-        <div class="metric"><span class="metric-val red">${d.toInstall}</span><span class="metric-label">To Install</span></div>
       </div>
-      <!-- Progress bars -->
-      <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+      <div class="chart-wrap" style="max-width:180px;margin:4px auto">
+        <canvas id="chartEmbeds" height="160"></canvas>
+        <div class="chart-center-label">${instPct}%<span>installed</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
         <div>
-          <div style="display:flex;justify-content:space-between;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)"><span>Delivered</span><span>${d.total ? Math.round(d.delivered/d.total*100) : 0}%</span></div>
-          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${d.total ? d.delivered/d.total*100 : 0}%;background:var(--accent2);border-radius:3px"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)"><span>Delivered</span><span>${delPct}%</span></div>
+          <div style="height:6px;background:${chartEmptyColor()};border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${delPct}%;background:var(--accent2);border-radius:3px;transition:width 0.8s var(--ease)"></div></div>
         </div>
         <div>
-          <div style="display:flex;justify-content:space-between;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)"><span>Installed</span><span>${d.total ? Math.round(d.installed/d.total*100) : 0}%</span></div>
-          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${d.total ? d.installed/d.total*100 : 0}%;background:var(--green);border-radius:3px"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)"><span>Installed</span><span>${instPct}%</span></div>
+          <div style="height:6px;background:${chartEmptyColor()};border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${instPct}%;background:var(--green);border-radius:3px;transition:width 0.8s var(--ease)"></div></div>
         </div>
       </div>
       <div class="mini-list">
@@ -1426,25 +1609,150 @@ function renderEmbeds() {
     <div class="card-foot">
       <a href="${SHEET_LINK(SHEETS.embeds)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
     </div>`;
+  // Render doughnut
+  getOrCreateChart('chartEmbeds', {
+    type: 'doughnut',
+    data: {
+      labels: ['Installed', 'Delivered (pending)', 'Not Delivered'],
+      datasets: [{
+        data: [d.installed, Math.max(0, d.delivered - d.installed), Math.max(0, d.total - d.delivered)],
+        backgroundColor: ['#22C55E', getAccent2(), chartEmptyColor()],
+        hoverBackgroundColor: ['#16A34A', isLight() ? '#0E7490' : '#00D4E0', isLight() ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)'],
+      }]
+    },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: true } },
+      responsive: true,
+      maintainAspectRatio: true,
+    }
+  });
 }
 
+// ── CONCRETE (merged Takeoff + Orders) ── Horizontal Bar
+function renderConcrete() {
+  const c = document.getElementById('card-concrete');
+  const t = state.takeoff;
+  const o = state.orders;
+  if (!t && !o) { c.innerHTML = cardSkeleton('Concrete'); return; }
+  const hasT = t && !t.error;
+  const hasO = o && !o.error;
+  const total = hasT ? t.total : 0;
+  c.innerHTML = `
+    <div class="card-head">
+      <div class="card-title-row"><span class="card-title">Concrete</span></div>
+      <div class="card-meta">${fmtTime((hasT ? t.fetched : null) || (hasO ? o.fetched : null))}</div>
+    </div>
+    <div class="card-body">
+      ${hasT ? `<div class="headline-row"><span class="headline">${fmtNum(total)}</span><span class="headline-sub">CY takeoff</span></div>` : ''}
+      ${hasT ? `<div style="margin:8px 0"><canvas id="chartConcrete" height="100"></canvas></div>` : ''}
+      ${hasO ? `<div class="metric-row" style="margin-top:6px">
+        <div class="metric"><span class="metric-val">${o.count}</span><span class="metric-label">Active Orders</span></div>
+        <div class="metric"><span class="metric-val green">${o.todayCount}</span><span class="metric-label">Today</span></div>
+        <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtNum(o.totalCY)}</span><span class="metric-label">CY Ordered</span></div>
+      </div>` : ''}
+      ${hasT && t.upcoming && t.upcoming.length ? `<div class="mini-list">
+        <div class="metric-label" style="margin-bottom:4px">Upcoming${t.scheduledThisWeek ? ' · ' + t.scheduledThisWeek + ' this week' : ''}</div>
+        ${t.upcoming.slice(0, 3).map(u => `<div class="mini-list-item"><span class="chip cyan">${u.date}</span><span class="ml-name">${u.sect}</span><span class="ml-val">${u.tot} CY</span></div>`).join('')}
+      </div>` : ''}
+    </div>
+    <div class="card-foot">
+      <a href="${SHEET_LINK(SHEETS.takeoff)}" target="_blank" class="sheet-link">Takeoff ↗</a>
+      <a href="${SHEET_LINK(SHEETS.orders)}" target="_blank" class="sheet-link">Orders ↗</a>
+    </div>`;
+  if (hasT) {
+    getOrCreateChart('chartConcrete', {
+      type: 'bar',
+      data: {
+        labels: ['8000 PSI', '5000 PSI', 'Slurry'],
+        datasets: [{
+          data: [t.cy8000, t.cy5000, t.slurry],
+          backgroundColor: [getAccent1(), getAccent2(), getAccent3()],
+          borderRadius: 4,
+          barPercentage: 0.6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: true, grid: { color: chartGridColor() }, border: { color: chartBorderColor() }, ticks: { callback: v => v + ' CY' } },
+          y: { display: true, grid: { display: false }, border: { color: chartBorderColor() } }
+        },
+        plugins: { tooltip: { callbacks: { label: ctx => ctx.raw + ' CY' } } }
+      }
+    });
+  }
+}
+
+// ── SUBMITTALS & RFIs ── Dual Doughnut
+function renderSubmittals() {
+  const c = document.getElementById('card-submittals');
+  const d = state.submittals;
+  if (!d) { c.innerHTML = cardSkeleton('Submittals & RFIs'); return; }
+  const rfiClosed = Math.max(0, d.rfiTotal - d.rfiOpen);
+  const subClosed = Math.max(0, d.submittalTotal - d.submittalOpen);
+  c.innerHTML = `
+    <div class="card-head">
+      <div class="card-title-row"><span class="card-title">Submittals & RFIs</span></div>
+      <div class="card-meta">${fmtTime(d.fetched)}</div>
+    </div>
+    <div class="card-body">
+      <div class="dual-donut">
+        <div>
+          <div class="chart-wrap">
+            <canvas id="chartRfi" height="100" width="100"></canvas>
+            <div class="chart-center-label" style="font-size:18px">${d.rfiOpen}<span>open</span></div>
+          </div>
+          <div class="donut-label">RFIs (${d.rfiTotal})</div>
+        </div>
+        <div>
+          <div class="chart-wrap">
+            <canvas id="chartSubmittal" height="100" width="100"></canvas>
+            <div class="chart-center-label" style="font-size:18px">${d.submittalOpen}<span>open</span></div>
+          </div>
+          <div class="donut-label">Submittals (${d.submittalTotal})</div>
+        </div>
+      </div>
+      ${d.oldestOpen.length ? `<div class="mini-list" style="margin-top:8px">
+        <div class="metric-label" style="margin-bottom:4px">Oldest Open RFIs</div>
+        ${d.oldestOpen.slice(0, 3).map(r => `<div class="mini-list-item"><span class="chip amber">${r.num}</span><span class="ml-name">${r.subj}</span></div>`).join('')}
+      </div>` : ''}
+    </div>
+    <div class="card-foot">
+      <a href="${SHEET_LINK(SHEETS.submittals)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
+    </div>`;
+  // RFI donut
+  getOrCreateChart('chartRfi', {
+    type: 'doughnut',
+    data: {
+      labels: ['Open', 'Closed'],
+      datasets: [{ data: [d.rfiOpen, rfiClosed], backgroundColor: [getAccent3(), 'rgba(34,197,94,0.7)'] }]
+    },
+    options: { cutout: '68%', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
+  });
+  // Submittal donut
+  getOrCreateChart('chartSubmittal', {
+    type: 'doughnut',
+    data: {
+      labels: ['Open', 'Closed'],
+      datasets: [{ data: [d.submittalOpen, subClosed], backgroundColor: [getAccent3(), 'rgba(34,197,94,0.7)'] }]
+    },
+    options: { cutout: '68%', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
+  });
+}
+
+// ── TOOLS ── Horizontal Bar Chart
 function renderTools() {
   const c = document.getElementById('card-tools');
   const d = state.tools;
-  if (!d) { c.innerHTML = cardSkeleton('Tools', '🔧'); return; }
-  if (d.error) { c.innerHTML = errorCard('Tools', '🔧', d.error, SHEETS.tools); return; }
-  const fmtDollar = n => { n = parseFloat(n) || 0; return '$' + (n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toFixed(0)); };
-  const topCats = d.topCats || [];
-  const topAssigned = d.topAssigned || [];
-  // Status pills
-  const statusPills = Object.entries(d.statusCounts || {}).map(([s, n]) => {
-    const lo = s.toLowerCase();
-    const chipClass = lo.includes('on site') ? 'green' : lo.includes('return') ? 'cyan' : lo.includes('lost') || lo.includes('damaged') ? 'red' : '';
-    return `<span class="chip ${chipClass}">${s}: ${n}</span>`;
-  }).join(' ');
+  if (!d) { c.innerHTML = cardSkeleton('Tools'); return; }
+  if (d.error) { c.innerHTML = errorCard('Tools', d.error, SHEETS.tools); return; }
+  const topCats = (d.topCats || []).slice(0, 5);
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">🛠</span><span class="card-title">Tools</span></div>
+      <div class="card-title-row"><span class="card-title">Tools</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
@@ -1453,29 +1761,46 @@ function renderTools() {
         <div class="metric"><span class="metric-val green">${d.onSite}</span><span class="metric-label">On Site</span></div>
         <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtDollar(d.totalValue)}</span><span class="metric-label">Inventory Value</span></div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${statusPills}</div>
-      ${topCats.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Categories</div>
-        ${topCats.map(([cat, n]) => `<div class="mini-list-item"><span class="ml-name">${cat}</span><span class="ml-val">${n}</span></div>`).join('')}
-      </div>` : ''}
-      ${topAssigned.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Assigned To</div>
-        ${topAssigned.map(([name, n]) => `<div class="mini-list-item"><span class="ml-name">${name}</span><span class="ml-val">${n} items</span></div>`).join('')}
-      </div>` : ''}
+      ${topCats.length ? `<div style="margin-top:8px"><canvas id="chartTools" height="140"></canvas></div>` : ''}
     </div>
     <div class="card-foot">
       <a href="${SHEET_LINK(SHEETS.tools)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
     </div>`;
+  if (topCats.length) {
+    getOrCreateChart('chartTools', {
+      type: 'bar',
+      data: {
+        labels: topCats.map(([cat]) => cat.length > 18 ? cat.slice(0, 16) + '...' : cat),
+        datasets: [{
+          data: topCats.map(([, n]) => n),
+          backgroundColor: getAccent2(),
+          borderRadius: 3,
+          barPercentage: 0.65,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { display: true, beginAtZero: true, grid: { color: chartGridColor() }, border: { color: chartBorderColor() }, ticks: { stepSize: 1 } },
+          y: { display: true, grid: { display: false }, border: { color: chartBorderColor() } }
+        }
+      }
+    });
+  }
 }
 
+// ── ACP COORDINATION ── Vertical Bar Chart
 function renderACP() {
   const c = document.getElementById('card-acp');
   const d = state.acp;
-  if (!d) { c.innerHTML = cardSkeleton('ACP Coordination', '🏗'); return; }
+  if (!d) { c.innerHTML = cardSkeleton('ACP Coordination'); return; }
   const pct = Math.round(d.avgReduced * 100);
+  const worst = d.worst || [];
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">🏁</span><span class="card-title">ACP Coordination</span></div>
+      <div class="card-title-row"><span class="card-title">ACP Coordination</span></div>
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
@@ -1484,125 +1809,126 @@ function renderACP() {
         <div class="metric"><span class="metric-val">${d.tableBLocations}</span><span class="metric-label">Locations</span></div>
         <div class="metric"><span class="metric-val ${pct >= 50 ? 'red' : pct >= 30 ? 'amber' : 'green'}">${pct}%</span><span class="metric-label">Avg Reduced</span></div>
       </div>
-      ${d.worst.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Most Reduced</div>
-        ${d.worst.map(w => `<div class="mini-list-item"><span class="chip red">${w.mark}</span><span class="ml-name">${w.grid}</span><span class="ml-val">${Math.round(w.pct * 100)}%</span></div>`).join('')}
-      </div>` : ''}
+      ${worst.length ? `<div style="margin-top:8px;flex:1"><canvas id="chartAcp" height="150"></canvas></div>` : ''}
     </div>
     <div class="card-foot">
       <a href="${SHEET_LINK(SHEETS.acp)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
     </div>`;
+  if (worst.length) {
+    getOrCreateChart('chartAcp', {
+      type: 'bar',
+      data: {
+        labels: worst.map(w => w.mark),
+        datasets: [{
+          data: worst.map(w => Math.round(w.pct * 100)),
+          backgroundColor: worst.map(w => {
+            const p = w.pct * 100;
+            return p >= 50 ? '#EF4444' : p >= 30 ? getAccent3() : '#22C55E';
+          }),
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { display: true, grid: { color: chartGridColor() }, border: { color: chartBorderColor() }, ticks: { callback: v => v + '%' }, max: 100, beginAtZero: true },
+          x: { display: true, grid: { display: false }, border: { color: chartBorderColor() }, ticks: { font: { size: 8 }, maxRotation: 45 } }
+        },
+        plugins: { tooltip: { callbacks: { label: ctx => ctx.raw + '% reduced' } } }
+      }
+    });
+  }
 }
 
-function renderSubmittals() {
-  const c = document.getElementById('card-submittals');
-  const d = state.submittals;
-  if (!d) { c.innerHTML = cardSkeleton('Submittals & RFIs', '📋'); return; }
+// ── PROJECT HEALTH ── Radar Chart
+function renderOverview() {
+  const c = document.getElementById('card-overview');
+  const e = state.embeds, s = state.submittals, a = state.acp;
+  if (!e && !s && !a) { c.innerHTML = cardSkeleton('Project Health'); return; }
+
+  const embedPct = e && e.total ? Math.round(e.installed / e.total * 100) : 0;
+  const deliveryPct = e && e.total ? Math.round(e.delivered / e.total * 100) : 0;
+  const rfiPct = s && s.rfiTotal ? Math.round((s.rfiTotal - s.rfiOpen) / s.rfiTotal * 100) : 0;
+  const subPct = s && s.submittalTotal ? Math.round((s.submittalTotal - s.submittalOpen) / s.submittalTotal * 100) : 0;
+  const acpPct = a ? Math.max(0, 100 - Math.round(a.avgReduced * 100)) : 0;
+  const avg = Math.round((embedPct + deliveryPct + rfiPct + subPct + acpPct) / 5);
+
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">📄</span><span class="card-title">Submittals & RFIs</span></div>
-      <div class="card-meta">${fmtTime(d.fetched)}</div>
+      <div class="card-title-row"><span class="card-title">Project Health</span></div>
+      <div class="card-meta">composite score</div>
     </div>
-    <div class="card-body">
-      <div class="metric-row">
-        <div class="metric"><span class="metric-val amber">${d.rfiOpen}</span><span class="metric-label">Open RFIs</span></div>
-        <div class="metric"><span class="metric-val">${d.rfiTotal}</span><span class="metric-label">Total RFIs</span></div>
-        <div class="metric"><span class="metric-val amber">${d.submittalOpen}</span><span class="metric-label">Open Submittals</span></div>
-      </div>
-      ${d.oldestOpen.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Oldest Open RFIs</div>
-        ${d.oldestOpen.map(r => `<div class="mini-list-item"><span class="chip amber">${r.num}</span><span class="ml-name">${r.subj}</span></div>`).join('')}
-      </div>` : ''}
-    </div>
-    <div class="card-foot">
-      <a href="${SHEET_LINK(SHEETS.submittals)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
+    <div class="card-body" style="align-items:center;justify-content:center">
+      <div class="headline-row" style="justify-content:center"><span class="headline" style="font-size:48px;color:${avg >= 70 ? 'var(--green)' : avg >= 40 ? 'var(--yellow)' : 'var(--red)'}">${avg}</span><span class="headline-sub" style="font-size:14px">/100</span></div>
+      <div style="width:100%;max-width:260px;margin:0 auto"><canvas id="chartOverview" height="220"></canvas></div>
     </div>`;
+  getOrCreateChart('chartOverview', {
+    type: 'radar',
+    data: {
+      labels: ['Embeds', 'Delivery', 'RFIs', 'Submittals', 'ACP'],
+      datasets: [{
+        data: [embedPct, deliveryPct, rfiPct, subPct, acpPct],
+        backgroundColor: isLight() ? 'rgba(8,145,178,0.12)' : 'rgba(0,240,255,0.12)',
+        borderColor: getAccent2(),
+        borderWidth: 2,
+        pointBackgroundColor: getAccent2(),
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { stepSize: 25, display: false },
+          grid: { color: chartGridColor() },
+          pointLabels: { font: { size: 10, weight: '700', family: "'Inter', sans-serif" }, color: isLight() ? '#3F4250' : '#8B92A8' },
+          angleLines: { color: chartGridColor() },
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
 }
 
-function renderTakeoff() {
-  const c = document.getElementById('card-takeoff');
-  const d = state.takeoff;
-  if (!d) { c.innerHTML = cardSkeleton('Concrete Takeoff', '🧱'); return; }
-  if (d.error) { c.innerHTML = errorCard('Concrete Takeoff', '🧱', d.error, SHEETS.takeoff); return; }
-  c.innerHTML = `
-    <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">🧱</span><span class="card-title">Concrete Takeoff</span></div>
-      <div class="card-meta">${fmtTime(d.fetched)}</div>
-    </div>
-    <div class="card-body">
-      <div class="headline-row"><span class="headline">${d.total}</span><span class="headline-sub">CY total</span></div>
-      <div class="metric-row">
-        <div class="metric"><span class="metric-val red">${d.cy8000}</span><span class="metric-label">8000 PSI</span></div>
-        <div class="metric"><span class="metric-val">${d.cy5000}</span><span class="metric-label">5000 PSI</span></div>
-        <div class="metric"><span class="metric-val amber">${d.slurry}</span><span class="metric-label">Slurry</span></div>
-      </div>
-      ${d.upcoming.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Upcoming · ${d.scheduledThisWeek} this week</div>
-        ${d.upcoming.map(u => `<div class="mini-list-item"><span class="chip cyan">${u.date}</span><span class="ml-name">${u.sect}</span><span class="ml-val">${u.tot} CY</span></div>`).join('')}
-      </div>` : ''}
-    </div>
-    <div class="card-foot">
-      <a href="${SHEET_LINK(SHEETS.takeoff)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
-    </div>`;
-}
-
-function renderOrders() {
-  const c = document.getElementById('card-orders');
-  const d = state.orders;
-  if (!d) { c.innerHTML = cardSkeleton('Concrete Ordered', '🚛'); return; }
-  if (d.error) { c.innerHTML = errorCard('Concrete Ordered', '🚛', d.error, SHEETS.orders); return; }
-  c.innerHTML = `
-    <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">🏎️</span><span class="card-title">Concrete Ordered</span></div>
-      <div class="card-meta">${fmtTime(d.fetched)}</div>
-    </div>
-    <div class="card-body">
-      <div class="metric-row">
-        <div class="metric"><span class="metric-val">${d.count}</span><span class="metric-label">Active Orders</span></div>
-        <div class="metric"><span class="metric-val green">${d.todayCount}</span><span class="metric-label">Today</span></div>
-        <div class="metric"><span class="metric-val">${d.totalCY}</span><span class="metric-label">CY Total</span></div>
-      </div>
-      ${d.recent.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Recent</div>
-        ${d.recent.map(r => `<div class="mini-list-item"><span class="chip">${r.time||'—'}</span><span class="ml-name">${r.area} · ${r.mix}</span><span class="ml-val">${r.yards} CY</span></div>`).join('')}
-      </div>` : ''}
-    </div>
-    <div class="card-foot">
-      <a href="${SHEET_LINK(SHEETS.orders)}" target="_blank" class="sheet-link">Open in Sheets ↗</a>
-    </div>`;
-}
-
+// ── LIVE POURS ──
 function renderLive() {
   const c = document.getElementById('card-live');
   const lp = state.livePour;
   const isActive = lp && lp.pourId;
   c.innerHTML = `
     <div class="card-head">
-      <div class="card-title-row"><span class="card-icon">⚡</span><span class="card-title">Live Pours</span></div>
+      <div class="card-title-row"><span class="card-title">Live Pours</span></div>
       <div class="card-meta">cup-dashboard</div>
     </div>
     <div class="card-body">
       <div class="live-status ${isActive ? 'active' : ''}">
         <span class="live-dot"></span>
         <span class="live-label">${isActive ? `LIVE · ${lp.pourId} · ${lp.section || ''}` : 'No active pour'}</span>
-        <button class="expand-btn" onclick="openLiveModal()">Expand →</button>
+        <button class="expand-btn" onclick="openLiveModal()">Expand</button>
       </div>
     </div>`;
 }
 
-function cardSkeleton(name, icon) {
-  return `<div class="card-head"><div class="card-title-row"><span class="card-icon">${icon}</span><span class="card-title">${name}</span></div></div><div class="skeleton" style="height:120px"></div>`;
+function cardSkeleton(name) {
+  return `<div class="card-head"><div class="card-title-row"><span class="card-title">${name}</span></div></div><div class="skeleton" style="height:120px"></div>`;
 }
-function errorCard(name, icon, msg, sheetId) {
-  return `<div class="card-head"><div class="card-title-row"><span class="card-icon">${icon}</span><span class="card-title">${name}</span></div></div><div class="card-body"><div style="font-size:11px;color:var(--text-muted)">${msg}</div></div><div class="card-foot"><a href="${SHEET_LINK(sheetId)}" target="_blank" class="sheet-link">Open in Sheets ↗</a></div>`;
+function errorCard(name, msg, sheetId) {
+  return `<div class="card-head"><div class="card-title-row"><span class="card-title">${name}</span></div></div><div class="card-body"><div style="font-size:11px;color:var(--text-muted)">${msg}</div></div><div class="card-foot"><a href="${SHEET_LINK(sheetId)}" target="_blank" class="sheet-link">Open in Sheets ↗</a></div>`;
 }
 
 function renderAll() {
+  renderKPI();
   renderEmbeds();
+  renderConcrete();
+  renderSubmittals();
   renderTools();
   renderACP();
-  renderSubmittals();
-  renderOrders();
+  renderOverview();
   renderLive();
 }
 
