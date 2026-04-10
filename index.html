@@ -1431,6 +1431,8 @@ function renderTools() {
   if (!d) { c.innerHTML = cardSkeleton('Tools', '🔧'); return; }
   if (d.error) { c.innerHTML = errorCard('Tools', '🔧', d.error, SHEETS.tools); return; }
   const fmtDollar = n => { n = parseFloat(n) || 0; return '$' + (n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toFixed(0)); };
+  const topCats = d.topCats || [];
+  const topAssigned = d.topAssigned || [];
   // Status pills
   const statusPills = Object.entries(d.statusCounts || {}).map(([s, n]) => {
     const lo = s.toLowerCase();
@@ -1449,13 +1451,13 @@ function renderTools() {
         <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtDollar(d.totalValue)}</span><span class="metric-label">Inventory Value</span></div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${statusPills}</div>
-      ${d.topCats.length ? `<div class="mini-list">
+      ${topCats.length ? `<div class="mini-list">
         <div class="metric-label" style="margin-bottom:4px">Categories</div>
-        ${d.topCats.map(([cat, n]) => `<div class="mini-list-item"><span class="ml-name">${cat}</span><span class="ml-val">${n}</span></div>`).join('')}
+        ${topCats.map(([cat, n]) => `<div class="mini-list-item"><span class="ml-name">${cat}</span><span class="ml-val">${n}</span></div>`).join('')}
       </div>` : ''}
-      ${d.topAssigned.length ? `<div class="mini-list">
+      ${topAssigned.length ? `<div class="mini-list">
         <div class="metric-label" style="margin-bottom:4px">Assigned To</div>
-        ${d.topAssigned.map(([name, n]) => `<div class="mini-list-item"><span class="ml-name">${name}</span><span class="ml-val">${n} items</span></div>`).join('')}
+        ${topAssigned.map(([name, n]) => `<div class="mini-list-item"><span class="ml-name">${name}</span><span class="ml-val">${n} items</span></div>`).join('')}
       </div>` : ''}
     </div>
     <div class="card-foot">
