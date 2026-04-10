@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenYap Command Center</title>
 <meta name="theme-color" content="#0c0c0f">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>">
+<link rel="icon" href="cars/20.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Racing+Sans+One&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -185,13 +185,7 @@ body.light .header {
   align-items: center;
   gap: 10px;
 }
-.brand-icon {
-  font-size: 20px;
-  -webkit-text-fill-color: initial;
-  background: none;
-  -webkit-background-clip: initial;
-  background-clip: initial;
-}
+/* brand-icon replaced by .brand-car */
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .icon-btn {
   width: 36px;
@@ -554,6 +548,109 @@ body.light .sheet-link:hover { color: #fff; }
   background-clip: initial;
 }
 .card-meta .jp { font-size: 7px; opacity: 0.4; display: block; margin-top: 2px; }
+
+/* ── Brand car (header) ───────────────────────────────────────── */
+.brand-car {
+  height: 36px;
+  width: auto;
+  filter: drop-shadow(0 0 12px rgba(219,10,64,0.4)) drop-shadow(0 0 4px rgba(0,240,255,0.3));
+  transition: transform 0.4s var(--ease), filter 0.4s;
+}
+.brand-car:hover {
+  transform: translateX(6px) scale(1.1);
+  filter: drop-shadow(0 0 20px rgba(219,10,64,0.6)) drop-shadow(0 0 8px rgba(0,240,255,0.5));
+}
+
+/* ── Floating cars ────────────────────────────────────────────── */
+.flying-cars {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fly-car {
+  position: absolute;
+  opacity: 0.12;
+  filter: drop-shadow(0 0 16px rgba(0,240,255,0.15));
+  will-change: transform;
+  transition: opacity 0.5s;
+}
+body.light .fly-car { opacity: 0.08; filter: drop-shadow(0 0 8px rgba(8,145,178,0.1)); }
+/* Car 1 — top-right, drifts left */
+.fly-1 {
+  width: 180px;
+  top: 12%;
+  right: 8%;
+  transform: scaleX(-1);
+  animation: flyDrift1 25s ease-in-out infinite alternate;
+}
+/* Car 2 — mid-left, drifts right-up */
+.fly-2 {
+  width: 140px;
+  top: 45%;
+  left: 3%;
+  animation: flyDrift2 30s ease-in-out infinite alternate;
+}
+/* Car 3 — bottom-right corner */
+.fly-3 {
+  width: 160px;
+  bottom: 8%;
+  right: 5%;
+  transform: scaleX(-1);
+  animation: flyDrift3 22s ease-in-out infinite alternate;
+}
+/* Car 4 — top-left, behind header */
+.fly-4 {
+  width: 120px;
+  top: 5%;
+  left: 12%;
+  opacity: 0.08;
+  animation: flyDrift4 28s ease-in-out infinite alternate;
+}
+/* Car 5 — mid-right */
+.fly-5 {
+  width: 130px;
+  top: 65%;
+  right: 2%;
+  animation: flyDrift5 35s ease-in-out infinite alternate;
+}
+/* Car 6 — bottom-left */
+.fly-6 {
+  width: 110px;
+  bottom: 18%;
+  left: 6%;
+  transform: scaleX(-1);
+  opacity: 0.09;
+  animation: flyDrift6 20s ease-in-out infinite alternate;
+}
+@keyframes flyDrift1 {
+  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(-2deg); }
+  100% { transform: scaleX(-1) translate3d(-40px, 15px, 0) rotate(1deg); }
+}
+@keyframes flyDrift2 {
+  0%   { transform: translate3d(0, 0, 0) rotate(1deg); }
+  100% { transform: translate3d(30px, -20px, 0) rotate(-1deg); }
+}
+@keyframes flyDrift3 {
+  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); }
+  100% { transform: scaleX(-1) translate3d(-25px, -12px, 0) rotate(2deg); }
+}
+@keyframes flyDrift4 {
+  0%   { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  100% { transform: translate3d(20px, 10px, 0) rotate(1deg); }
+}
+@keyframes flyDrift5 {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  100% { transform: translate3d(-15px, -18px, 0) rotate(-2deg); }
+}
+@keyframes flyDrift6 {
+  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(1deg); }
+  100% { transform: scaleX(-1) translate3d(20px, 8px, 0) rotate(-1deg); }
+}
+@media (max-width: 700px) {
+  .fly-car { display: none; }
+}
 
 /* Loading skeleton */
 .skeleton {
@@ -1096,6 +1193,16 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
 
 <div class="bg-mesh"></div>
 
+<!-- ─── FLOATING CARS ─── -->
+<div class="flying-cars" aria-hidden="true">
+  <img src="cars/1.png" class="fly-car fly-1" alt="">
+  <img src="cars/55.png" class="fly-car fly-2" alt="">
+  <img src="cars/70.png" class="fly-car fly-3" alt="">
+  <img src="cars/100.png" class="fly-car fly-4" alt="">
+  <img src="cars/150.png" class="fly-car fly-5" alt="">
+  <img src="cars/42.png" class="fly-car fly-6" alt="">
+</div>
+
 <!-- ─── LEFT RAIL: BLACKJACK ─── -->
 <div id="bjToggle" onclick="toggleBJ()">
   <span class="rail-label">♠ ブラック<br>ジャック</span>
@@ -1163,7 +1270,7 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
 <div class="app">
   <header class="header">
     <div class="brand">
-      <span class="brand-icon">🏎️</span>
+      <img src="cars/20.png" alt="" class="brand-car">
       <span>OPENYAP COMMAND CENTER</span>
       <span class="jp-brand">指令室</span>
     </div>
@@ -1705,7 +1812,8 @@ function renderConcrete() {
         <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtNum(o.totalCY)}</span><span class="metric-label">CY Ordered</span></div>
       </div>` : ''}
       ${next ? `
-      <div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--accent1-06);border:1px solid var(--accent1-10)">
+      <div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--accent1-06);border:1px solid var(--accent1-10);position:relative;overflow:hidden">
+        <img src="cars/120.png" alt="" style="position:absolute;right:-10px;bottom:-8px;height:55px;opacity:0.1;filter:drop-shadow(0 0 6px var(--accent1));pointer-events:none">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="font-family:'Orbitron',sans-serif;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent1)">Next Pour</span>
           <span class="chip cyan">${next.date}</span>
@@ -1729,7 +1837,7 @@ function renderConcrete() {
       </div>` : ''}
     </div>
     <div class="card-foot">
-      <a href="https://dyap123.github.io/cup-dashboard/" target="_blank" class="sheet-link">CUP Dashboard ↗</a>
+      <a href="https://dyap123.github.io/cup-dashboard/?view=manager" target="_blank" class="sheet-link">CUP Dashboard ↗</a>
       <a href="${SHEET_LINK(SHEETS.orders)}" target="_blank" class="sheet-link">Orders ↗</a>
     </div>`;
 }
@@ -1953,12 +2061,14 @@ function renderLive() {
       <div class="card-title-row"><span class="card-title">Live Pours</span><span class="jp-title">ライブ打設</span></div>
       <div class="card-meta">cup-dashboard</div>
     </div>
-    <div class="card-body">
-      <div class="live-status ${isActive ? 'active' : ''}">
+    <div class="card-body" style="flex-direction:row;align-items:center;gap:16px">
+      <img src="cars/10.png" alt="" style="height:50px;width:auto;opacity:0.7;filter:drop-shadow(0 0 10px rgba(0,240,255,0.3));flex-shrink:0">
+      <div class="live-status ${isActive ? 'active' : ''}" style="flex:1">
         <span class="live-dot"></span>
         <span class="live-label">${isActive ? `LIVE · ${lp.pourId} · ${lp.section || ''}` : 'No active pour'}</span>
         <button class="expand-btn" onclick="openLiveModal()">Expand</button>
       </div>
+      <img src="cars/88.png" alt="" style="height:45px;width:auto;opacity:0.5;filter:drop-shadow(0 0 8px rgba(219,10,64,0.3));flex-shrink:0;transform:scaleX(-1)">
     </div>`;
 }
 
