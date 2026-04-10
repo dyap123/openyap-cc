@@ -1064,10 +1064,16 @@ async function gvizFetch(sheetId, tabName) {
   const m = txt.match(/setResponse\(([\s\S]*)\)/);
   if (!m) throw new Error('bad gviz response');
   const json = JSON.parse(m[1]);
-  // Each row → array of cell values (string/number/null)
-  const rows = (json.table.rows || []).map(r => (r.c || []).map(c => c?.v ?? null));
   // Column labels
   const headers = (json.table.cols || []).map(c => c?.label || '');
+  const colCount = headers.length || 26;
+  // Each row → array of cell values (string/number/null), padded to colCount
+  // so index access never returns undefined for trailing empty cells
+  const rows = (json.table.rows || []).map(r => {
+    const cells = (r.c || []).map(c => c?.v ?? null);
+    while (cells.length < colCount) cells.push(null);
+    return cells;
+  });
   return { rows, headers };
 }
 
@@ -1342,15 +1348,18 @@ async function refreshAll() {
   const pill = document.getElementById('statusPill');
   pill.classList.add('refreshing');
   pill.textContent = 'Refreshing…';
-  try {
-    await Promise.all([
-      loadEmbeds(), loadTools(), loadSubmittals(), loadACP(), loadTakeoff(), loadOrders(),
-    ]);
-    state.lastRefresh = Date.now();
-    renderAll();
-  } catch (e) {
-    console.error('refreshAll failed', e);
-  }
+  // Use allSettled so one failing sheet doesn't kill the rest
+  const loaders = [
+    loadEmbeds().catch(e => console.warn('embeds failed', e)),
+    loadTools().catch(e => console.warn('tools failed', e)),
+    loadSubmittals().catch(e => console.warn('submittals failed', e)),
+    loadACP().catch(e => console.warn('acp failed', e)),
+    loadTakeoff().catch(e => console.warn('takeoff failed', e)),
+    loadOrders().catch(e => console.warn('orders failed', e)),
+  ];
+  await Promise.allSettled(loaders);
+  state.lastRefresh = Date.now();
+  renderAll();
   pill.classList.remove('refreshing');
   pill.textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -1657,7 +1666,7 @@ LIVE SHEET SNAPSHOTS:
     s += `  → LACC Embed Tracker / Detailed Tracker\n`;
   }
   if (state.tools) {
-    s += `\n🔧 TOOLS — ${state.tools.total} total assets, ${state.tools.checkedOut} checked out.\n`;
+    s += `\n🔧 TOOLS — ${state.tools.total} total assets, ${state.tools.onSite} on site, ~${Math.round(state.tools.totalValue||0)} total value.\n`;
     s += `  → Tools Tracker / Assets\n`;
   }
   if (state.submittals) {
