@@ -1107,56 +1107,72 @@ function saveCache(k) {
 // ════════════════════════════════════════════════════════════════
 async function loadEmbeds() {
   const dt = await gvizFetch(SHEETS.embeds, 'Detailed Tracker');
-  // Schema: A=Area B=Section C=Embed ID D=Description E=Plate F=#Bolts G=Length H=Weight I=Depth J=Installed K=Status
+  // Schema: A=Area B=Section C=Embed ID D=Description E=Plate F=#Bolts G=Length
+  //         H=Weight I=Depth J=Delivered K=Installed L=Status M=Drawing N=Notes O=LastUpdate
   const rows = dt.rows.filter(r => r[2]); // has embed ID
   const total = rows.length;
-  const installed = rows.filter(r => r[9] === true).length;
+  const isTrue = v => v === true || v === 'TRUE' || v === 'true';
+  const delivered = rows.filter(r => isTrue(r[9])).length;
+  const installed = rows.filter(r => isTrue(r[10])).length;
   // Per-area counts
   const byArea = {};
   rows.forEach(r => {
     const area = String(r[0] ?? '0');
-    if (!byArea[area]) byArea[area] = { total: 0, installed: 0 };
+    if (!byArea[area]) byArea[area] = { total: 0, delivered: 0, installed: 0 };
     byArea[area].total++;
-    if (r[9] === true) byArea[area].installed++;
+    if (isTrue(r[9])) byArea[area].delivered++;
+    if (isTrue(r[10])) byArea[area].installed++;
   });
-  state.embeds = { total, installed, remaining: total - installed, byArea, rows: rows.slice(0, 200), fetched: Date.now() };
+  state.embeds = {
+    total, delivered, installed,
+    toDeliver: total - delivered,
+    toInstall: total - installed,
+    byArea, rows: rows.slice(0, 200), fetched: Date.now(),
+  };
   saveCache('embeds');
 }
 async function loadTools() {
-  // Use Assets tab (the source of truth from the user's tracker)
+  // Assets tab schema (confirmed): A=Item ID, B=Serial, C=Part No, D=Description,
+  //   E=Category, F=Unit Cost, G=PO#, H=Issued Date, I=Assigned To, J=Status,
+  //   K=Notes, L=Qty, M=blank, N=Also Known As, O=Verified
   const a = await gvizFetch(SHEETS.tools, 'Assets').catch(() => null);
   if (!a) { state.tools = { error: 'Assets tab not found' }; return; }
-  const rows = a.rows.filter(r => r.some(v => v != null && v !== ''));
+  const rows = a.rows.filter(r => r[0]); // has Item ID
   const total = rows.length;
-  // Try to detect a status column with "out", "checked out", "in use"
-  const headers = a.headers.map(h => (h || '').toLowerCase());
-  const statusIdx = headers.findIndex(h => h.includes('status') || h.includes('verified'));
-  const foremanIdx = headers.findIndex(h => h.includes('foreman') || h.includes('assigned'));
-  let checkedOut = 0;
-  if (statusIdx >= 0) {
-    checkedOut = rows.filter(r => {
-      const v = String(r[statusIdx] ?? '').toLowerCase();
-      return v.includes('out') || v.includes('use') || v.includes('assigned');
-    }).length;
-  }
-  // Try Transfers tab for recent activity
-  let recentTransfers = [];
-  try {
-    const t = await gvizFetch(SHEETS.tools, 'Transfers');
-    recentTransfers = t.rows
-      .filter(r => r.some(v => v != null && v !== ''))
-      .slice(-5).reverse()
-      .map(r => ({ desc: r.slice(0, 4).filter(v => v).join(' · ') }));
-  } catch {}
-  // Foreman counts
-  const byForeman = {};
-  if (foremanIdx >= 0) {
-    rows.forEach(r => {
-      const f = String(r[foremanIdx] ?? '').trim();
-      if (f) byForeman[f] = (byForeman[f] || 0) + 1;
-    });
-  }
-  state.tools = { total, checkedOut, recentTransfers, byForeman, fetched: Date.now() };
+  // Status breakdown
+  const statusCounts = {};
+  let onSite = 0, totalValue = 0;
+  rows.forEach(r => {
+    const status = String(r[9] ?? '').trim();
+    if (status) statusCounts[status] = (statusCounts[status] || 0) + 1;
+    if (status.toLowerCase().includes('on site')) onSite++;
+    // Unit cost → parse $ amount
+    const costStr = String(r[5] ?? '').replace(/[$,]/g, '');
+    const cost = parseFloat(costStr) || 0;
+    const qty = parseInt(r[11]) || 1;
+    totalValue += cost * qty;
+  });
+  // Category breakdown (top 5)
+  const byCat = {};
+  rows.forEach(r => {
+    const cat = String(r[4] ?? '').trim();
+    if (cat) byCat[cat] = (byCat[cat] || 0) + 1;
+  });
+  const topCats = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  // Assigned breakdown (who has tools checked out)
+  const byAssigned = {};
+  rows.forEach(r => {
+    const name = String(r[8] ?? '').trim();
+    if (name) byAssigned[name] = (byAssigned[name] || 0) + 1;
+  });
+  const topAssigned = Object.entries(byAssigned).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  state.tools = {
+    total, onSite, totalValue,
+    statusCounts,
+    topCats,
+    topAssigned,
+    fetched: Date.now(),
+  };
   saveCache('tools');
 }
 async function loadSubmittals() {
@@ -1365,7 +1381,6 @@ function renderEmbeds() {
   const c = document.getElementById('card-embeds');
   const d = state.embeds;
   if (!d) { c.innerHTML = cardSkeleton('Embeds', '⚓'); return; }
-  const accent = 'var(--accent1)';
   const topAreas = Object.entries(d.byArea)
     .sort((a, b) => b[1].total - a[1].total).slice(0, 5);
   c.innerHTML = `
@@ -1374,18 +1389,26 @@ function renderEmbeds() {
       <div class="card-meta">${fmtTime(d.fetched)}</div>
     </div>
     <div class="card-body">
-      <div class="donut-wrap">
-        ${donutSvg(d.installed, d.total, accent)}
-        <div style="flex:1;min-width:0">
-          <div class="headline-row"><span class="headline">${d.total}</span><span class="headline-sub">total</span></div>
-          <div class="metric-row" style="margin-top:8px">
-            <div class="metric"><span class="metric-val green">${d.installed}</span><span class="metric-label">Installed</span></div>
-            <div class="metric"><span class="metric-val amber">${d.remaining}</span><span class="metric-label">Remaining</span></div>
-          </div>
+      <div class="headline-row"><span class="headline">${d.total}</span><span class="headline-sub">total embeds</span></div>
+      <div class="metric-row" style="margin-top:10px">
+        <div class="metric"><span class="metric-val" style="color:var(--accent2)">${d.delivered}</span><span class="metric-label">Delivered</span></div>
+        <div class="metric"><span class="metric-val green">${d.installed}</span><span class="metric-label">Installed</span></div>
+        <div class="metric"><span class="metric-val amber">${d.toDeliver}</span><span class="metric-label">To Deliver</span></div>
+        <div class="metric"><span class="metric-val red">${d.toInstall}</span><span class="metric-label">To Install</span></div>
+      </div>
+      <!-- Progress bars -->
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)"><span>Delivered</span><span>${d.total ? Math.round(d.delivered/d.total*100) : 0}%</span></div>
+          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${d.total ? d.delivered/d.total*100 : 0}%;background:var(--accent2);border-radius:3px"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)"><span>Installed</span><span>${d.total ? Math.round(d.installed/d.total*100) : 0}%</span></div>
+          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${d.total ? d.installed/d.total*100 : 0}%;background:var(--green);border-radius:3px"></div></div>
         </div>
       </div>
       <div class="mini-list">
-        ${topAreas.map(([area, x]) => `<div class="mini-list-item"><span class="chip">Area ${area}</span><span class="ml-name"></span><span class="ml-val">${x.installed}/${x.total}</span></div>`).join('')}
+        ${topAreas.map(([area, x]) => `<div class="mini-list-item"><span class="chip">Area ${area}</span><span class="ml-name" style="font-size:9px;color:var(--text-muted)">${x.delivered}D · ${x.installed}I</span><span class="ml-val">/${x.total}</span></div>`).join('')}
       </div>
     </div>
     <div class="card-foot">
@@ -1398,7 +1421,13 @@ function renderTools() {
   const d = state.tools;
   if (!d) { c.innerHTML = cardSkeleton('Tools', '🔧'); return; }
   if (d.error) { c.innerHTML = errorCard('Tools', '🔧', d.error, SHEETS.tools); return; }
-  const topForemen = Object.entries(d.byForeman || {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const fmtDollar = n => '$' + (n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toFixed(0));
+  // Status pills
+  const statusPills = Object.entries(d.statusCounts || {}).map(([s, n]) => {
+    const lo = s.toLowerCase();
+    const chipClass = lo.includes('on site') ? 'green' : lo.includes('return') ? 'cyan' : lo.includes('lost') || lo.includes('damaged') ? 'red' : '';
+    return `<span class="chip ${chipClass}">${s}: ${n}</span>`;
+  }).join(' ');
   c.innerHTML = `
     <div class="card-head">
       <div class="card-title-row"><span class="card-icon">🔧</span><span class="card-title">Tools</span></div>
@@ -1407,11 +1436,17 @@ function renderTools() {
     <div class="card-body">
       <div class="metric-row">
         <div class="metric"><span class="metric-val">${d.total}</span><span class="metric-label">Total Assets</span></div>
-        <div class="metric"><span class="metric-val amber">${d.checkedOut}</span><span class="metric-label">Checked Out</span></div>
+        <div class="metric"><span class="metric-val green">${d.onSite}</span><span class="metric-label">On Site</span></div>
+        <div class="metric"><span class="metric-val" style="color:var(--accent3)">${fmtDollar(d.totalValue)}</span><span class="metric-label">Inventory Value</span></div>
       </div>
-      ${topForemen.length ? `<div class="mini-list">
-        <div class="metric-label" style="margin-bottom:4px">Top Foremen</div>
-        ${topForemen.map(([f, n]) => `<div class="mini-list-item"><span class="ml-name">${f}</span><span class="ml-val">${n}</span></div>`).join('')}
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${statusPills}</div>
+      ${d.topCats.length ? `<div class="mini-list">
+        <div class="metric-label" style="margin-bottom:4px">Categories</div>
+        ${d.topCats.map(([cat, n]) => `<div class="mini-list-item"><span class="ml-name">${cat}</span><span class="ml-val">${n}</span></div>`).join('')}
+      </div>` : ''}
+      ${d.topAssigned.length ? `<div class="mini-list">
+        <div class="metric-label" style="margin-bottom:4px">Assigned To</div>
+        ${d.topAssigned.map(([name, n]) => `<div class="mini-list-item"><span class="ml-name">${name}</span><span class="ml-val">${n} items</span></div>`).join('')}
       </div>` : ''}
     </div>
     <div class="card-foot">
@@ -1615,9 +1650,9 @@ You have live snapshots of every sheet in this command center. When the team ask
 LIVE SHEET SNAPSHOTS:
 `;
   if (state.embeds) {
-    s += `\n📌 EMBEDS — ${state.embeds.total} total, ${state.embeds.installed} installed, ${state.embeds.remaining} remaining.\n`;
+    s += `\n📌 EMBEDS — ${state.embeds.total} total, ${state.embeds.delivered} delivered, ${state.embeds.installed} installed, ${state.embeds.toDeliver} to deliver, ${state.embeds.toInstall} to install.\n`;
     Object.entries(state.embeds.byArea).slice(0, 8).forEach(([area, x]) => {
-      s += `  Area ${area}: ${x.installed}/${x.total} done\n`;
+      s += `  Area ${area}: ${x.delivered}D / ${x.installed}I of ${x.total}\n`;
     });
     s += `  → LACC Embed Tracker / Detailed Tracker\n`;
   }
