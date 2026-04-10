@@ -561,7 +561,7 @@ body.light .sheet-link:hover { color: #fff; }
   filter: drop-shadow(0 0 20px rgba(219,10,64,0.6)) drop-shadow(0 0 8px rgba(0,240,255,0.5));
 }
 
-/* ── Floating cars ────────────────────────────────────────────── */
+/* ── Floating cars — BACK LAYER ────────────────────────────────── */
 .flying-cars {
   position: fixed;
   inset: 0;
@@ -574,82 +574,165 @@ body.light .sheet-link:hover { color: #fff; }
   opacity: 0.12;
   filter: drop-shadow(0 0 16px rgba(0,240,255,0.15));
   will-change: transform;
-  transition: opacity 0.5s;
 }
 body.light .fly-car { opacity: 0.08; filter: drop-shadow(0 0 8px rgba(8,145,178,0.1)); }
-/* Car 1 — top-right, drifts left */
+/* Car 1 — top-right, cruises a wide arc */
 .fly-1 {
   width: 180px;
-  top: 12%;
-  right: 8%;
-  transform: scaleX(-1);
-  animation: flyDrift1 25s ease-in-out infinite alternate;
+  top: 10%;
+  right: 5%;
+  animation: flyArc1 18s ease-in-out infinite;
 }
-/* Car 2 — mid-left, drifts right-up */
+/* Car 2 — mid-left, bobs and weaves */
 .fly-2 {
   width: 140px;
-  top: 45%;
-  left: 3%;
-  animation: flyDrift2 30s ease-in-out infinite alternate;
+  top: 42%;
+  left: 2%;
+  animation: flyWeave2 14s ease-in-out infinite;
 }
-/* Car 3 — bottom-right corner */
+/* Car 3 — bottom-right, slow patrol */
 .fly-3 {
   width: 160px;
-  bottom: 8%;
-  right: 5%;
-  transform: scaleX(-1);
-  animation: flyDrift3 22s ease-in-out infinite alternate;
+  bottom: 6%;
+  right: 4%;
+  animation: flyPatrol3 20s ease-in-out infinite;
 }
-/* Car 4 — top-left, behind header */
+/* Car 4 — top-left, gentle hover */
 .fly-4 {
   width: 120px;
-  top: 5%;
-  left: 12%;
-  opacity: 0.08;
-  animation: flyDrift4 28s ease-in-out infinite alternate;
+  top: 4%;
+  left: 10%;
+  opacity: 0.09;
+  animation: flyHover4 12s ease-in-out infinite;
 }
-/* Car 5 — mid-right */
+/* Car 5 — mid-right, diagonal sweep */
 .fly-5 {
   width: 130px;
-  top: 65%;
-  right: 2%;
-  animation: flyDrift5 35s ease-in-out infinite alternate;
+  top: 60%;
+  right: 1%;
+  animation: flySweep5 16s ease-in-out infinite;
 }
-/* Car 6 — bottom-left */
+/* Car 6 — bottom-left, tight drift */
 .fly-6 {
   width: 110px;
-  bottom: 18%;
-  left: 6%;
-  transform: scaleX(-1);
-  opacity: 0.09;
-  animation: flyDrift6 20s ease-in-out infinite alternate;
+  bottom: 20%;
+  left: 4%;
+  opacity: 0.10;
+  animation: flyTight6 10s ease-in-out infinite;
 }
-@keyframes flyDrift1 {
+/* Back-layer keyframes — real movement, not just nudges */
+@keyframes flyArc1 {
   0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(-2deg); }
-  100% { transform: scaleX(-1) translate3d(-40px, 15px, 0) rotate(1deg); }
+  25%  { transform: scaleX(-1) translate3d(-60px, 30px, 0) rotate(1deg); }
+  50%  { transform: scaleX(-1) translate3d(-100px, 10px, 0) rotate(-1deg); }
+  75%  { transform: scaleX(-1) translate3d(-50px, -20px, 0) rotate(2deg); }
+  100% { transform: scaleX(-1) translate3d(0, 0, 0) rotate(-2deg); }
 }
-@keyframes flyDrift2 {
-  0%   { transform: translate3d(0, 0, 0) rotate(1deg); }
-  100% { transform: translate3d(30px, -20px, 0) rotate(-1deg); }
-}
-@keyframes flyDrift3 {
-  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); }
-  100% { transform: scaleX(-1) translate3d(-25px, -12px, 0) rotate(2deg); }
-}
-@keyframes flyDrift4 {
-  0%   { transform: translate3d(0, 0, 0) rotate(-1deg); }
-  100% { transform: translate3d(20px, 10px, 0) rotate(1deg); }
-}
-@keyframes flyDrift5 {
+@keyframes flyWeave2 {
   0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-  100% { transform: translate3d(-15px, -18px, 0) rotate(-2deg); }
+  20%  { transform: translate3d(40px, -25px, 0) rotate(-2deg); }
+  40%  { transform: translate3d(80px, 5px, 0) rotate(1deg); }
+  60%  { transform: translate3d(50px, 30px, 0) rotate(-1deg); }
+  80%  { transform: translate3d(15px, 10px, 0) rotate(2deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
 }
-@keyframes flyDrift6 {
-  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(1deg); }
-  100% { transform: scaleX(-1) translate3d(20px, 8px, 0) rotate(-1deg); }
+@keyframes flyPatrol3 {
+  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); }
+  33%  { transform: scaleX(-1) translate3d(-70px, -30px, 0) rotate(3deg); }
+  66%  { transform: scaleX(-1) translate3d(-30px, 15px, 0) rotate(-2deg); }
+  100% { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); }
+}
+@keyframes flyHover4 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25%  { transform: translate3d(10px, -15px, 0) rotate(-1deg); }
+  50%  { transform: translate3d(25px, 5px, 0) rotate(1deg); }
+  75%  { transform: translate3d(8px, 12px, 0) rotate(-1deg); }
+}
+@keyframes flySweep5 {
+  0%   { transform: translate3d(0, 0, 0) rotate(1deg); }
+  30%  { transform: translate3d(-50px, -35px, 0) rotate(-2deg); }
+  60%  { transform: translate3d(-20px, 10px, 0) rotate(1deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(1deg); }
+}
+@keyframes flyTight6 {
+  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); }
+  25%  { transform: scaleX(-1) translate3d(30px, -15px, 0) rotate(3deg); }
+  50%  { transform: scaleX(-1) translate3d(55px, 5px, 0) rotate(-2deg); }
+  75%  { transform: scaleX(-1) translate3d(25px, 18px, 0) rotate(1deg); }
+  100% { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); }
+}
+
+/* ── Front-layer fly-by cars ──────────────────────────────────── */
+.flyby-cars {
+  position: fixed;
+  inset: 0;
+  z-index: 55;  /* above cards (z:1), below sidebars (z:100) */
+  pointer-events: none;
+  overflow: hidden;
+}
+.flyby {
+  position: absolute;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 0 20px rgba(0,240,255,0.25)) drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+}
+body.light .flyby { filter: drop-shadow(0 0 12px rgba(8,145,178,0.15)) drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+/* Flyby 1 — streaks right-to-left across top third */
+.flyby-1 {
+  width: 200px;
+  top: 22%;
+  right: -220px;
+  animation: flybyRTL 12s cubic-bezier(0.4,0,0.2,1) infinite;
+  animation-delay: 2s;
+}
+/* Flyby 2 — streaks left-to-right across bottom third */
+.flyby-2 {
+  width: 160px;
+  bottom: 25%;
+  left: -180px;
+  transform: scaleX(-1);
+  animation: flybyLTR 15s cubic-bezier(0.4,0,0.2,1) infinite;
+  animation-delay: 8s;
+}
+/* Flyby 3 — quick dart across middle, smaller + faster */
+.flyby-3 {
+  width: 120px;
+  top: 50%;
+  right: -140px;
+  animation: flybyFast 9s cubic-bezier(0.3,0,0.1,1) infinite;
+  animation-delay: 5s;
+}
+/* Right-to-left flyby */
+@keyframes flybyRTL {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  5%   { opacity: 0.3; }
+  15%  { transform: translate3d(-40vw, -15px, 0) rotate(-1deg); opacity: 0.3; }
+  45%  { transform: translate3d(-85vw, 10px, 0) rotate(1deg); opacity: 0.25; }
+  55%  { transform: translate3d(-110vw, -5px, 0) rotate(-1deg); opacity: 0.15; }
+  60%  { transform: translate3d(-130vw, 0, 0); opacity: 0; }
+  100% { transform: translate3d(-130vw, 0, 0); opacity: 0; }
+}
+/* Left-to-right flyby */
+@keyframes flybyLTR {
+  0%   { transform: scaleX(-1) translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  4%   { opacity: 0.25; }
+  12%  { transform: scaleX(-1) translate3d(-35vw, 10px, 0) rotate(1deg); opacity: 0.25; }
+  40%  { transform: scaleX(-1) translate3d(-80vw, -8px, 0) rotate(-1deg); opacity: 0.2; }
+  52%  { transform: scaleX(-1) translate3d(-110vw, 5px, 0) rotate(0deg); opacity: 0.1; }
+  58%  { transform: scaleX(-1) translate3d(-130vw, 0, 0); opacity: 0; }
+  100% { transform: scaleX(-1) translate3d(-130vw, 0, 0); opacity: 0; }
+}
+/* Fast dart */
+@keyframes flybyFast {
+  0%   { transform: translate3d(0, 0, 0) rotate(1deg); opacity: 0; }
+  3%   { opacity: 0.35; }
+  10%  { transform: translate3d(-30vw, -10px, 0) rotate(-2deg); opacity: 0.35; }
+  30%  { transform: translate3d(-70vw, 8px, 0) rotate(1deg); opacity: 0.28; }
+  42%  { transform: translate3d(-110vw, -3px, 0) rotate(-1deg); opacity: 0.1; }
+  48%  { transform: translate3d(-130vw, 0, 0); opacity: 0; }
+  100% { transform: translate3d(-130vw, 0, 0); opacity: 0; }
 }
 @media (max-width: 700px) {
-  .fly-car { display: none; }
+  .fly-car, .flyby { display: none; }
 }
 
 /* Loading skeleton */
@@ -1193,7 +1276,7 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
 
 <div class="bg-mesh"></div>
 
-<!-- ─── FLOATING CARS ─── -->
+<!-- ─── BACK-LAYER FLOATING CARS ─── -->
 <div class="flying-cars" aria-hidden="true">
   <img src="cars/1.png" class="fly-car fly-1" alt="">
   <img src="cars/55.png" class="fly-car fly-2" alt="">
@@ -1201,6 +1284,13 @@ body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
   <img src="cars/100.png" class="fly-car fly-4" alt="">
   <img src="cars/150.png" class="fly-car fly-5" alt="">
   <img src="cars/42.png" class="fly-car fly-6" alt="">
+</div>
+
+<!-- ─── FRONT-LAYER FLY-BY CARS ─── -->
+<div class="flyby-cars" aria-hidden="true">
+  <img src="cars/5.png" class="flyby flyby-1" alt="">
+  <img src="cars/120.png" class="flyby flyby-2" alt="">
+  <img src="cars/10.png" class="flyby flyby-3" alt="">
 </div>
 
 <!-- ─── LEFT RAIL: BLACKJACK ─── -->
