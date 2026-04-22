@@ -1304,21 +1304,22 @@ body::before {
   z-index: -1;
 }
 
-/* Carbon-fiber texture on cards + HUD glass */
+/* Card accents — cyan border + neon hover. Leave the card's own
+   background (gradient + ::before glow) intact so Chart.js canvases
+   keep rendering clean. */
 .card {
-  background-color: #1a1a1d !important;
-  background-image:
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 4px),
-    repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 4px) !important;
-  border: 1px solid rgba(0,240,255,0.2) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,240,255,0.18) !important;
   transition: all .25s ease !important;
 }
 .card:hover {
   border-color: #00f0ff !important;
   box-shadow: 0 0 24px rgba(0,240,255,0.35) !important;
   transform: translateY(-2px);
+}
+/* Chart wrappers must sit above any card ::before glow so canvases paint clean */
+.chart-wrap, canvas {
+  position: relative;
+  z-index: 2;
 }
 
 /* KPI pills — telemetry readout look */
