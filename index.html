@@ -1293,7 +1293,7 @@ body {
   font-family: 'Inter', system-ui, sans-serif !important;
 }
 
-/* Tachometer ambient glow on the right */
+/* Tachometer ambient glow on the right — must sit BEHIND every widget (including Chart.js canvases) */
 body::before {
   content: '';
   position: fixed;
@@ -1301,7 +1301,7 @@ body::before {
   width: 800px; height: 100%;
   background: radial-gradient(circle at right center, rgba(0,240,255,0.15) 0%, transparent 60%);
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
 
 /* Carbon-fiber texture on cards + HUD glass */
