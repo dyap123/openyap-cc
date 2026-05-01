@@ -1767,7 +1767,9 @@ function fbSet(p, d) { return db ? db.ref(p).set(d) : Promise.resolve(); }
 //  GVIZ FETCH
 // ════════════════════════════════════════════════════════════════
 async function gvizFetch(sheetId, tabName) {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}`;
+  // Cache-buster on the URL bypasses Google's GViz edge cache so refresh
+  // actually reflects sheet changes without waiting on Google's TTL.
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}&_=${Date.now()}`;
   const res = await fetch(url);
   const txt = await res.text();
   const m = txt.match(/setResponse\(([\s\S]*)\)/);
@@ -1807,10 +1809,19 @@ const state = {
   livePour: null,
   lastRefresh: null,
 };
+// Hydrate from localStorage on boot, but only entries newer than 5 min.
+// Anything older falls back to a skeleton until the live fetch lands —
+// avoids serving multi-day-old data on first paint.
+const CACHE_TTL_MS = 5 * 60 * 1000;
 function loadCache() {
   ['embeds','tools','submittals','acp','takeoff','orders'].forEach(k => {
     const c = localStorage.getItem('cc_cache_' + k);
-    if (c) try { state[k] = JSON.parse(c); } catch {}
+    if (!c) return;
+    try {
+      const parsed = JSON.parse(c);
+      if (parsed && parsed.fetched && (Date.now() - parsed.fetched) > CACHE_TTL_MS) return;
+      state[k] = parsed;
+    } catch {}
   });
 }
 function saveCache(k) {
@@ -1963,43 +1974,51 @@ async function loadACP() {
   state.acp = { pileCapMarks, tableBLocations, avgReduced, worst, fetched: Date.now() };
   saveCache('acp');
 }
+// Upcoming pours come from CUP Dashboard's Firebase paths so we get the
+// same real-time view CUP shows. Three paths feed the canonical pour list:
+//   sheet-snapshot · base list cached from the CUP source-of-truth sheet
+//   pours-user     · user-added pours layered on top
+//   pours-deleted  · tombstones (id → true) for removed pours
 async function loadTakeoff() {
+  if (typeof db === 'undefined' || !db) {
+    state.takeoff = { error: 'Firebase not connected' };
+    saveCache('takeoff');
+    return;
+  }
   try {
-    const pt = await gvizFetch(SHEETS.takeoff, 'Pour Takeoff');
-    const headers = pt.headers.map(h => (h || '').toLowerCase());
-    const dateIdx = headers.findIndex(h => h.includes('date'));
-    const cy8Idx = headers.findIndex(h => h.includes('8000') || h.includes('cy8'));
-    const cy5Idx = headers.findIndex(h => h.includes('5000') || h.includes('cy5'));
-    const slIdx = headers.findIndex(h => h.includes('slurry'));
-    const totIdx = headers.findIndex(h => h.includes('total'));
-    const sectIdx = headers.findIndex(h => h.includes('section') || h.includes('area'));
-    let cy8 = 0, cy5 = 0, sl = 0, scheduled = 0, upcoming = [];
+    const [snap, userPoursObj, deletedObj] = await Promise.all([
+      fbGet('sheet-snapshot').catch(() => null),
+      fbGet('pours-user').catch(() => null),
+      fbGet('pours-deleted').catch(() => null),
+    ]);
+    const basePours = (snap && Array.isArray(snap.pours)) ? snap.pours : [];
+    const userPours = userPoursObj && typeof userPoursObj === 'object' ? Object.values(userPoursObj) : [];
+    const tombstones = deletedObj || {};
+    const allPours = [...basePours, ...userPours].filter(p => p && p.id && !tombstones[p.id]);
+
     const today = new Date(); today.setHours(0,0,0,0);
     const weekFromNow = new Date(today); weekFromNow.setDate(weekFromNow.getDate() + 7);
-    pt.rows.forEach(row => {
-      if (!row.some(v => v != null && v !== '')) return;
-      cy8 += parseFloat(row[cy8Idx]) || 0;
-      cy5 += parseFloat(row[cy5Idx]) || 0;
-      sl += parseFloat(row[slIdx]) || 0;
-      // Date might be a Date() object or "Date(2026,3,9)" string
-      let d = row[dateIdx];
-      if (typeof d === 'string' && d.startsWith('Date(')) {
-        const m = d.match(/Date\((\d+),(\d+),(\d+)/);
-        if (m) d = new Date(+m[1], +m[2], +m[3]);
-      }
-      if (d instanceof Date && !isNaN(d) && d >= today) {
-        if (d <= weekFromNow) scheduled++;
-        upcoming.push({
-          date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-          sect: String(row[sectIdx] ?? ''),
-          cy8: Math.round(parseFloat(row[cy8Idx]) || 0),
-          cy5: Math.round(parseFloat(row[cy5Idx]) || 0),
-          slurry: Math.round(parseFloat(row[slIdx]) || 0),
-          tot: Math.round(parseFloat(row[totIdx]) || 0),
-          ts: d.getTime(),
-        });
-      }
-    });
+    let scheduled = 0, cy8 = 0, cy5 = 0, sl = 0;
+    const upcoming = [];
+    for (const p of allPours) {
+      if (!p.date) continue;
+      const parts = String(p.date).split('/').map(Number);
+      if (parts.length < 2 || !parts[0] || !parts[1]) continue;
+      const dateObj = new Date(2026, parts[0] - 1, parts[1]);
+      if (isNaN(dateObj) || dateObj < today) continue;
+      const ic8 = +p.cy8000 || 0, ic5 = +p.cy5000 || 0, isl = +p.slurry || 0;
+      cy8 += ic8; cy5 += ic5; sl += isl;
+      if (dateObj <= weekFromNow) scheduled++;
+      upcoming.push({
+        date: dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        sect: String(p.section ?? p.id ?? ''),
+        cy8: Math.round(ic8),
+        cy5: Math.round(ic5),
+        slurry: Math.round(isl),
+        tot: Math.round(+p.total || (ic8 + ic5 + isl)),
+        ts: dateObj.getTime(),
+      });
+    }
     upcoming.sort((a, b) => a.ts - b.ts);
     state.takeoff = {
       cy8000: Math.round(cy8),
@@ -2011,7 +2030,7 @@ async function loadTakeoff() {
       fetched: Date.now(),
     };
   } catch (e) {
-    console.warn('Takeoff load failed', e);
+    console.warn('Takeoff/Firebase load failed', e);
     state.takeoff = { error: e.message };
   }
   saveCache('takeoff');
@@ -2949,6 +2968,20 @@ fbListen('active-pour', val => {
   state.livePour = val;
   renderLive();
 });
+
+// Upcoming-pour subscriptions — re-derive when CUP edits pours / adds user
+// pours / tombstones a pour, so the Concrete card stays live without waiting
+// for the 60s poll.
+let _poursDebounce = 0;
+function _rePullTakeoff() {
+  clearTimeout(_poursDebounce);
+  _poursDebounce = setTimeout(() => {
+    loadTakeoff().then(() => renderConcrete()).catch(() => {});
+  }, 250);
+}
+fbListen('sheet-snapshot', _rePullTakeoff);
+fbListen('pours-user',     _rePullTakeoff);
+fbListen('pours-deleted',  _rePullTakeoff);
 </script>
 </body>
 </html>
