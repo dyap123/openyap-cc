@@ -185,6 +185,46 @@ body.light .header {
   align-items: center;
   gap: 10px;
 }
+
+/* Back-to-launcher pill — sits left of the brand */
+.cc-launcher-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(0,240,255,0.75);
+  background: rgba(0,240,255,0.08);
+  border: 1px solid rgba(0,240,255,0.35);
+  padding: 6px 12px;
+  margin-right: 14px;
+  text-decoration: none;
+  /* Skewed parallelogram matching the existing chip-skew pattern */
+  transform: skew(-12deg);
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+.cc-launcher-pill > * { display: inline-block; transform: skew(12deg); }
+.cc-launcher-pill .material-symbols-outlined { font-size: 14px; }
+.cc-launcher-pill:hover {
+  background: rgba(0,240,255,0.22);
+  border-color: #00f0ff;
+  color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0,240,255,0.35);
+}
+body.light .cc-launcher-pill {
+  color: rgba(0,150,170,0.95);
+  background: rgba(0,180,200,0.12);
+  border-color: rgba(0,180,200,0.5);
+}
+@media (max-width: 700px) {
+  .cc-launcher-pill { padding: 5px 9px; font-size: 9px; margin-right: 8px; }
+  .cc-launcher-pill .lp-text { display: none; }
+}
+
 /* brand-icon replaced by .brand-car */
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .icon-btn {
@@ -476,7 +516,18 @@ body.light .sheet-link:hover { color: #fff; }
   letter-spacing: 1.2px;
   color: var(--text-muted);
 }
-.kpi-live .kpi-val { color: var(--green); }
+.kpi-live .kpi-val { color: var(--green); position: relative; padding-left: 16px; }
+.kpi-live .kpi-val::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  transform: translateY(-50%);
+  animation: livePulse 1.6s ease-in-out infinite;
+}
 @media (max-width: 700px) {
   .kpi-bar { flex-wrap: wrap; gap: 2px; }
   .kpi-item { flex: 1 1 30%; min-width: 80px; border-radius: 0 !important; }
@@ -1243,33 +1294,166 @@ body.light .flyby { filter: drop-shadow(0 0 12px rgba(8,145,178,0.15)) drop-shad
   padding: 12px;
   border-top: 1px solid var(--card-border);
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  align-items: stretch;
 }
+
+/* ── Wangan-OS HUD search wrap (mirrors launcher's lc-search-wrap) ── */
+.cc-search-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+.cc-search-wrap::before,
+.cc-search-wrap::after {
+  content: '';
+  position: absolute;
+  width: 7px; height: 7px;
+  border: 1px solid rgba(0,240,255,0.35);
+  pointer-events: none;
+  transition: border-color .25s, box-shadow .25s;
+}
+.cc-search-wrap::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+.cc-search-wrap::after  { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+.cc-search-wrap.is-focused::before,
+.cc-search-wrap.is-focused::after {
+  border-color: #00f0ff;
+  box-shadow: 0 0 5px rgba(0,240,255,0.6);
+}
+
 .alf-input-row input {
   flex: 1;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: var(--text);
+  width: 100%;
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #0b0c11;
+  background-image:
+    radial-gradient(ellipse 60% 100% at 0% 100%, rgba(0,240,255,0.08) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(8,8,12,0.96) 0%, rgba(14,14,20,0.96) 100%);
+  border: 1px solid rgba(0,240,255,0.20);
+  color: #dbfcff;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 10px 60px 10px 38px;
+  /* HUD-chamfered top-right corner — matches launcher search */
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
   outline: none;
-  font-family: inherit;
+  transition: border-color .25s, background-image .25s, box-shadow .25s;
 }
-body.light .alf-input-row input { background: rgba(0,0,0,0.04); }
-.alf-input-row input::placeholder { color: var(--text-muted); }
-.alf-input-row input:focus { border-color: var(--accent1); }
-.alf-input-row button {
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent1), var(--accent2));
-  color: #fff;
-  border: none;
-  font-weight: 700;
+body.light .alf-input-row input {
+  background-color: #f5f7fa;
+  background-image: none;
+  color: #1a1a24;
+  border-color: rgba(0,180,200,0.4);
+}
+.alf-input-row input::placeholder {
+  color: rgba(219,252,255,0.32);
+  letter-spacing: 0.2em;
+  font-weight: 600;
   font-size: 11px;
-  cursor: pointer;
-  font-family: inherit;
 }
+body.light .alf-input-row input::placeholder { color: rgba(0,0,0,0.4); }
+.alf-input-row input:hover { border-color: rgba(0,240,255,0.34); }
+.alf-input-row input:focus,
+.alf-input-row input:focus-visible {
+  border-color: #00f0ff;
+  background-image:
+    radial-gradient(ellipse 70% 110% at 0% 100%, rgba(0,240,255,0.14) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(6,6,10,0.98) 0%, rgba(12,14,22,0.98) 100%);
+  box-shadow: 0 0 0 1px #00f0ff, 0 0 28px rgba(0,240,255,0.28), inset 0 0 26px rgba(0,240,255,0.06);
+}
+.alf-input-row input:-webkit-autofill,
+.alf-input-row input:-webkit-autofill:hover,
+.alf-input-row input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #dbfcff;
+  -webkit-box-shadow: 0 0 0 1000px #0b0c11 inset;
+  caret-color: #00f0ff;
+}
+
+.cc-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(0,240,255,0.6);
+  font-size: 18px !important;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(0,240,255,0.45));
+  transition: color .25s, filter .25s;
+  z-index: 2;
+}
+.cc-search-wrap.is-focused .cc-search-icon {
+  color: #00f0ff;
+  filter: drop-shadow(0 0 8px rgba(0,240,255,0.8));
+}
+
+.cc-cmdk-hint {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(0,240,255,0.55);
+  border: 1px solid rgba(0,240,255,0.25);
+  background: rgba(0,0,0,0.4);
+  padding: 2px 6px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 2;
+  transition: color .25s, border-color .25s;
+}
+.cc-search-wrap.is-focused .cc-cmdk-hint {
+  color: #00f0ff;
+  border-color: rgba(0,240,255,0.6);
+}
+
+/* Animated scan-line on focus */
+.cc-search-scan {
+  position: absolute;
+  left: 0; right: 12px; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #00f0ff 50%, transparent 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-100%);
+  transition: opacity .25s;
+  z-index: 2;
+}
+.cc-search-wrap.is-focused .cc-search-scan {
+  opacity: 1;
+  animation: scanX 2.4s ease-in-out infinite;
+}
+@keyframes scanX {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.alf-input-row button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: #000;
+  border: none;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* HUD chamfer matching the input */
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  transition: filter .2s, transform .15s;
+}
+.alf-input-row button:hover { filter: brightness(1.15); }
+.alf-input-row button:active { transform: translateY(1px); }
 
 /* ── Wangan OS override — carbon fiber + cyan neon (2026-04-22) ── */
 :root {
@@ -1461,7 +1645,12 @@ body.light .kpi-item { background: #fff !important; border-color: rgba(0,0,0,0.1
     <div class="am ai">Pit crew online. Ask me about embeds, tools, RFIs, pours, orders — anything in your sheets. I'll point you right to it. Let's get these laps in.</div>
   </div>
   <div class="alf-input-row">
-    <input id="alfIn" type="text" placeholder="Ask Alfred…" onkeydown="if(event.key==='Enter')sendAlfred()">
+    <div class="cc-search-wrap" id="alfWrap">
+      <span class="material-symbols-outlined cc-search-icon">smart_toy</span>
+      <input id="alfIn" type="text" placeholder="Ask Alfred · embeds · pours · RFIs · tools" autocomplete="off" onkeydown="if(event.key==='Enter')sendAlfred()">
+      <span class="cc-cmdk-hint">⌘K</span>
+      <span class="cc-search-scan" aria-hidden="true"></span>
+    </div>
     <button onclick="sendAlfred()">Send</button>
   </div>
 </aside>
@@ -1469,6 +1658,10 @@ body.light .kpi-item { background: #fff !important; border-color: rgba(0,0,0,0.1
 <!-- ─── MAIN APP ─── -->
 <div class="app">
   <header class="header">
+    <a href="https://dyap123.github.io/openyap-launcher/" class="cc-launcher-pill" title="Back to Launcher">
+      <span class="material-symbols-outlined">apps</span>
+      <span class="lp-text">Launcher</span>
+    </a>
     <div class="brand">
       <img src="cars/20.png" alt="" class="brand-car">
       <span>OPENYAP COMMAND CENTER</span>
@@ -2716,12 +2909,32 @@ bjUI();
 //  KEYBOARD SHORTCUTS
 // ════════════════════════════════════════════════════════════════
 document.addEventListener('keydown', e => {
+  // Cmd-K / Ctrl-K — open Alfred + focus the input from anywhere
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    if (typeof alfOpen !== 'undefined' && !alfOpen) toggleAlfred();
+    const inp = document.getElementById('alfIn');
+    if (inp) { inp.focus(); inp.select(); }
+    return;
+  }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.key === 'r' || e.key === 'R') refreshAll();
   if (e.key === 't' || e.key === 'T') toggleTheme();
   if (e.key === '?' || e.key === '/') toggleAlfred();
   if (e.key === 'b' || e.key === 'B') toggleBJ();
 });
+
+// Alfred input focus state — drives scan-line + corner brackets + cmdk hint
+(function wireAlfInputFocus() {
+  const inp  = document.getElementById('alfIn');
+  const wrap = document.getElementById('alfWrap');
+  if (!inp || !wrap) return;
+  inp.addEventListener('focus', () => wrap.classList.add('is-focused'));
+  inp.addEventListener('blur',  () => wrap.classList.remove('is-focused'));
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { inp.value = ''; inp.blur(); }
+  });
+})();
 
 // ════════════════════════════════════════════════════════════════
 //  INIT
