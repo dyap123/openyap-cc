@@ -2087,10 +2087,45 @@ async function loadPipeline() {
     // sheet names directly. Hard-coded for the two known suffix sets we
     // expect; extend the array as more months come online.
     const variants = [
-      { tickets: 'Tickets',           runlog: 'Run Log',           label: 'Tickets' },
-      { tickets: 'Tickets 02-2024',   runlog: 'Run Log 02-2024',   label: 'Tickets 02-2024' },
+      { tickets: 'Tickets',           runlog: 'Run Log',           live: 'Live Status',           label: 'Tickets' },
+      { tickets: 'Tickets 02-2024',   runlog: 'Run Log 02-2024',   live: 'Live Status 02-2024',   label: 'Tickets 02-2024' },
     ];
     const out = [];
+    // Read live status separately so it updates faster than per-PDF polls.
+    let live = null;
+    for (const v of variants) {
+      try {
+        const ls = await gvizFetch(SHEETS.pipeline, v.live);
+        // Live Status is a 2-row table: headers + single data row.
+        // Columns: timestamp, state, run_id, pdf, pdf_idx, pdf_total,
+        //          page_idx, page_total, latest_flag, latest_ticket, rows_so_far
+        if (ls.rows.length) {
+          const r = ls.rows[ls.rows.length - 1];
+          // Sheets returns "Date(yyyy,mm,dd,...)" for date cells
+          const tsRaw = String(r[0] ?? '');
+          const m = tsRaw.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+          let tsMs = Date.parse(tsRaw);
+          if (m) tsMs = new Date(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]).getTime();
+          const ageMs = Date.now() - tsMs;
+          if (!isNaN(ageMs) && ageMs < 5 * 60 * 1000) {
+            live = {
+              variant: v.label,
+              state: String(r[1] ?? ''),
+              runId: String(r[2] ?? ''),
+              pdf: String(r[3] ?? ''),
+              pdfIdx: parseInt(r[4]) || 0,
+              pdfTotal: parseInt(r[5]) || 0,
+              pageIdx: parseInt(r[6]) || 0,
+              pageTotal: parseInt(r[7]) || 0,
+              latestFlag: String(r[8] ?? ''),
+              latestTicket: String(r[9] ?? ''),
+              rowsSoFar: parseInt(r[10]) || 0,
+              ageS: Math.round(ageMs / 1000),
+            };
+          }
+        }
+      } catch (_) { /* tab missing — pre-status pipeline */ }
+    }
     for (const v of variants) {
       try {
         const tk = await gvizFetch(SHEETS.pipeline, v.tickets);
@@ -2136,12 +2171,34 @@ async function loadPipeline() {
         // Silently skip variants that 404.
       }
     }
-    state.pipeline = { variants: out, fetched: Date.now() };
+    state.pipeline = { variants: out, live, fetched: Date.now() };
   } catch (e) {
     console.warn('Pipeline load failed', e);
     state.pipeline = { error: e.message };
   }
   saveCache('pipeline');
+}
+
+// Faster polling for live status — runs every 6 seconds when the pipeline
+// is active (last status seen within 90 s) so the dashboard feels live.
+let _pipelineLiveTimer = null;
+function startPipelineLivePolling() {
+  if (_pipelineLiveTimer) return;
+  const tick = () => {
+    loadPipeline().then(() => {
+      const live = state.pipeline && state.pipeline.live;
+      renderPipeline();
+      // If activity is recent, keep polling fast; otherwise back off.
+      if (live && live.ageS < 90 && live.state !== 'idle') {
+        _pipelineLiveTimer = setTimeout(tick, 6000);
+      } else {
+        _pipelineLiveTimer = setTimeout(tick, 30000);
+      }
+    }).catch(() => {
+      _pipelineLiveTimer = setTimeout(tick, 30000);
+    });
+  };
+  _pipelineLiveTimer = setTimeout(tick, 1500);
 }
 
 async function refreshAll() {
@@ -2546,12 +2603,74 @@ function renderPipeline() {
     `;
   }).join('');
 
+  // Live banner — shown only when there's been activity in the last 90s.
+  let liveBlock = '';
+  const live = p.live;
+  if (live && live.ageS < 90 && live.state !== 'idle' && live.state !== '') {
+    const stateLabels = {
+      starting: 'Starting up',
+      ocr: 'Reading',
+      ocr_done: 'Read',
+      normalizing: 'Normalizing',
+    };
+    const sLabel = stateLabels[live.state] || live.state;
+    const flagDot = live.latestFlag === 'OK' || live.latestFlag === 'GOOD'
+      ? '#22C55E'
+      : (live.latestFlag === 'OUT_OF_TOLERANCE' || live.latestFlag === 'REVIEW'
+         ? '#FFD700' : (live.latestFlag ? '#EF4444' : 'transparent'));
+    const pageStr = live.pageIdx && live.pageTotal
+      ? `pg ${live.pageIdx}/${live.pageTotal}` : '';
+    const pdfStr = live.pdfIdx && live.pdfTotal
+      ? `pdf ${live.pdfIdx}/${live.pdfTotal}` : '';
+    const pdfShort = (live.pdf || '').replace(/\.pdf$/i, '').slice(0, 38);
+    liveBlock = `
+      <div style="
+        background:linear-gradient(90deg,rgba(0,240,255,0.10),rgba(0,240,255,0.02));
+        border:1px solid rgba(0,240,255,0.25);
+        border-radius:6px;padding:9px 11px;margin-bottom:10px;
+        position:relative;overflow:hidden;">
+        <div style="
+          position:absolute;top:0;left:0;height:2px;width:100%;
+          background:linear-gradient(90deg,transparent,#00F0FF,transparent);
+          animation:pipelinePulse 1.6s linear infinite;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="
+              width:8px;height:8px;border-radius:50%;background:#00F0FF;
+              box-shadow:0 0 6px #00F0FF;
+              animation:pipelinePulse 1.6s ease-in-out infinite;"></span>
+            <span style="font-family:JetBrains Mono,monospace;font-size:10.5px;letter-spacing:0.12em;color:var(--accent2);text-transform:uppercase;">LIVE · ${sLabel}</span>
+          </div>
+          <span style="font-size:10.5px;color:var(--text-muted);">${live.variant} · ${live.ageS}s ago</span>
+        </div>
+        <div style="margin-top:6px;font-family:JetBrains Mono,monospace;font-size:11.5px;color:var(--text);line-height:1.5;">
+          ${pdfShort ? `<span style="color:var(--accent3)">${pdfShort}</span>` : ''}
+          ${pdfStr ? `<span style="color:var(--text-muted);margin-left:6px;">${pdfStr}</span>` : ''}
+          ${pageStr ? `<span style="color:var(--text-muted);margin-left:6px;">· ${pageStr}</span>` : ''}
+        </div>
+        ${live.latestTicket ? `
+        <div style="margin-top:4px;display:flex;gap:10px;font-size:10.5px;color:var(--text-body);align-items:center;">
+          <span>Last ticket: <b style="color:var(--text);">${live.latestTicket}</b></span>
+          ${live.latestFlag ? `<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;background:${flagDot};"></span>${live.latestFlag}</span>` : ''}
+          <span>${live.rowsSoFar} rows</span>
+        </div>` : ''}
+      </div>
+      <style>
+        @keyframes pipelinePulse {
+          0%, 100% { opacity: 0.5; transform: scale(0.95); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+      </style>
+    `;
+  }
+
   c.innerHTML = `
     <div class="card-head">
       <div class="card-title-row"><span class="card-title">Ticket Pipeline</span><span class="jp-title">伝票</span></div>
       <div class="card-meta">${fmtTime(p.fetched)}</div>
     </div>
     <div class="card-body">
+      ${liveBlock}
       <div style="font-size:11px;color:var(--text-muted);line-height:1.4;margin-bottom:4px;">
         Concrete delivery ticket OCR extraction.
         <a href="${SHEET_LINK(SHEETS.pipeline)}" target="_blank" style="color:var(--accent2);text-decoration:none;">Open sheet&nbsp;→</a>
@@ -3115,6 +3234,7 @@ loadCache();
 renderAll();
 refreshAll();
 setInterval(refreshAll, 60000);
+startPipelineLivePolling();
 
 // Live pour Firebase listener
 fbListen('active-pour', val => {
