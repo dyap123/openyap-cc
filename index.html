@@ -1694,6 +1694,7 @@ body.light .kpi-item { background: #fff !important; border-color: rgba(0,0,0,0.1
       <div class="card" id="card-submittals"><div class="card-head"><div class="card-title-row"><span class="card-title">Submittals & RFIs</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-tools"><div class="card-head"><div class="card-title-row"><span class="card-title">Tools</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-acp"><div class="card-head"><div class="card-title-row"><span class="card-title">ACP Coordination</span></div></div><div class="skeleton" style="height:120px"></div></div>
+      <div class="card" id="card-pipeline"><div class="card-head"><div class="card-title-row"><span class="card-title">Ticket Pipeline</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card" id="card-overview"><div class="card-head"><div class="card-title-row"><span class="card-title">Project Health</span></div></div><div class="skeleton" style="height:120px"></div></div>
       <div class="card live-card span3" id="card-live"><div class="card-head"><div class="card-title-row"><span class="card-title">Live Pours</span></div></div><div class="skeleton" style="height:60px"></div></div>
     </div>
@@ -1798,6 +1799,7 @@ const SHEETS = {
   acp:        '1UxXSekEpRL4raEBobs1nsW-OWOyiKHBJLoVraT4HBhA',
   takeoff:    '1fTL_w-kLz0Jzwni9r3kSuGqSvlsFhNm0RsfRurQH750',
   orders:     '1rOpf6jjbYYLDSUaG0d11IcJXRL-gpWLyH6XMnEW0J0c',
+  pipeline:   '1I3eF3V7NPNwZG7hTzuYZn42XZllih4wvHAyvw2Mssd4',  // LACC Concrete Ticket Extraction
 };
 const SHEET_LINK = id => `https://docs.google.com/spreadsheets/d/${id}/edit`;
 
@@ -1806,6 +1808,7 @@ const SHEET_LINK = id => `https://docs.google.com/spreadsheets/d/${id}/edit`;
 // ════════════════════════════════════════════════════════════════
 const state = {
   embeds: null, tools: null, submittals: null, acp: null, takeoff: null, orders: null,
+  pipeline: null,
   livePour: null,
   lastRefresh: null,
 };
@@ -2075,6 +2078,72 @@ async function loadOrders() {
   saveCache('orders');
 }
 
+// Concrete Ticket Extraction pipeline. Reads the Run Log + Tickets tabs from
+// the LACC Concrete Ticket Extraction sheet for both the original tabs and
+// any suffixed (per-month) variants.
+async function loadPipeline() {
+  try {
+    // Discover all "Run Log*" and "Tickets*" tabs by querying gviz with the
+    // sheet names directly. Hard-coded for the two known suffix sets we
+    // expect; extend the array as more months come online.
+    const variants = [
+      { tickets: 'Tickets',           runlog: 'Run Log',           label: 'Tickets' },
+      { tickets: 'Tickets 02-2024',   runlog: 'Run Log 02-2024',   label: 'Tickets 02-2024' },
+    ];
+    const out = [];
+    for (const v of variants) {
+      try {
+        const tk = await gvizFetch(SHEETS.pipeline, v.tickets);
+        const rl = await gvizFetch(SHEETS.pipeline, v.runlog);
+        // Tickets headers: _source_pdf, _source_page, _writer, _pour_location,
+        //                  _cover_mix_code, _cover_qty_placed_cy,
+        //                  confidence_flag, validation_reasons, ticket_number, …
+        // After format_only the same column has pretty headers but the same
+        // POSITIONS, so we work by index.
+        const flagIdx = 6;
+        const counts = { OK: 0, OUT_OF_TOLERANCE: 0, NEEDS_REVIEW: 0,
+                         MISSING_FIELD: 0, GOOD: 0, REVIEW: 0, BAD: 0 };
+        for (const r of tk.rows) {
+          const f = String(r[flagIdx] ?? '').trim().toUpperCase()
+                       .replace(/\s+/g, '_');
+          if (counts[f] !== undefined) counts[f]++;
+        }
+        // Run Log columns: timestamp, pdf, pages, writer, extracted_rows,
+        //                  ok_rows, flagged_rows, avg_qwen_latency_s,
+        //                  total_qwen_latency_s, writer_latency_s
+        const last = rl.rows[rl.rows.length - 1] || [];
+        const summaryRow = rl.rows.filter(r => String(r[1] ?? '').trim() === 'ALL').pop()
+                          || null;
+        const perPdf = rl.rows.filter(r => String(r[1] ?? '').trim() !== 'ALL');
+        const totalPages = perPdf.reduce(
+          (s, r) => s + (parseInt(r[2]) || 0), 0);
+        const extracted = perPdf.reduce(
+          (s, r) => s + (parseInt(r[4]) || 0), 0);
+        const avgLat = summaryRow ? parseFloat(summaryRow[7]) || 0 : 0;
+        const lastTs = (summaryRow && summaryRow[0]) || (last && last[0]) || '';
+        out.push({
+          label: v.label,
+          ticketsCount: tk.rows.length,
+          counts,
+          numPdfs: perPdf.length,
+          totalPages,
+          extracted,
+          avgLat,
+          lastTs: String(lastTs || ''),
+        });
+      } catch (innerErr) {
+        // Tab might not exist yet (e.g. 02-2024 before pipeline starts).
+        // Silently skip variants that 404.
+      }
+    }
+    state.pipeline = { variants: out, fetched: Date.now() };
+  } catch (e) {
+    console.warn('Pipeline load failed', e);
+    state.pipeline = { error: e.message };
+  }
+  saveCache('pipeline');
+}
+
 async function refreshAll() {
   const pill = document.getElementById('statusPill');
   pill.classList.add('refreshing');
@@ -2087,6 +2156,7 @@ async function refreshAll() {
     loadACP().catch(e => console.warn('acp failed', e)),
     loadTakeoff().catch(e => console.warn('takeoff failed', e)),
     loadOrders().catch(e => console.warn('orders failed', e)),
+    loadPipeline().catch(e => console.warn('pipeline failed', e)),
   ];
   await Promise.allSettled(loaders);
   state.lastRefresh = Date.now();
@@ -2409,6 +2479,88 @@ function renderACP() {
   }
 }
 
+// ── TICKET PIPELINE ── Concrete Ticket Extraction status
+function renderPipeline() {
+  const c = document.getElementById('card-pipeline');
+  const p = state.pipeline;
+  if (!p) { c.innerHTML = cardSkeleton('Ticket Pipeline'); return; }
+  if (p.error) {
+    c.innerHTML = `<div class="card-head"><div class="card-title-row"><span class="card-title">Ticket Pipeline</span></div></div><div class="card-body"><div class="dim">Failed to load: ${p.error}</div></div>`;
+    return;
+  }
+  const variants = p.variants || [];
+  if (!variants.length) {
+    c.innerHTML = `<div class="card-head"><div class="card-title-row"><span class="card-title">Ticket Pipeline</span></div></div><div class="card-body"><div class="dim">No runs yet — kick off the pipeline.</div></div>`;
+    return;
+  }
+
+  const fmtTs = (ts) => {
+    if (!ts) return '—';
+    // Sheets sometimes returns "Date(yyyy,mm,dd,...)" or a plain string
+    const m = String(ts).match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+    if (m) {
+      const d = new Date(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]);
+      return d.toLocaleString('en-US', { month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit' });
+    }
+    return String(ts);
+  };
+
+  const flagBadge = (label, n, kind) => {
+    const colors = {
+      good:  'background:rgba(34,197,94,0.18);color:#22C55E;',
+      warn:  'background:rgba(255,215,0,0.16);color:#FFD700;',
+      bad:   'background:rgba(239,68,68,0.18);color:#EF4444;',
+      muted: 'background:rgba(139,146,168,0.14);color:#8B92A8;',
+    };
+    return `<span style="display:inline-flex;gap:6px;align-items:center;
+      padding:3px 8px;border-radius:4px;font-family:JetBrains Mono,monospace;
+      font-size:10.5px;letter-spacing:0.05em;${colors[kind]}">
+      <b>${n}</b>${label}</span>`;
+  };
+
+  const variantBlocks = variants.map(v => {
+    const totalRows = v.ticketsCount;
+    const okPct = totalRows ? Math.round(((v.counts.OK + v.counts.GOOD) / totalRows) * 100) : 0;
+    const okN = v.counts.OK + v.counts.GOOD;
+    const warnN = v.counts.OUT_OF_TOLERANCE + v.counts.REVIEW;
+    const badN = v.counts.NEEDS_REVIEW + v.counts.MISSING_FIELD + v.counts.BAD;
+    return `
+      <div style="border-top:1px solid var(--card-border);padding-top:10px;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+          <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--accent2);letter-spacing:0.08em;">${v.label}</span>
+          <span style="font-size:10.5px;color:var(--text-muted);">${fmtTs(v.lastTs)}</span>
+        </div>
+        <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:8px;">
+          <div><span style="font-family:Orbitron,sans-serif;font-size:22px;font-weight:700;color:var(--text);">${totalRows}</span><span style="margin-left:4px;font-size:10.5px;color:var(--text-muted);">rows</span></div>
+          <div><span style="font-family:Orbitron,sans-serif;font-size:18px;font-weight:600;color:var(--accent2);">${v.numPdfs}</span><span style="margin-left:4px;font-size:10.5px;color:var(--text-muted);">PDFs</span></div>
+          <div><span style="font-family:Orbitron,sans-serif;font-size:18px;font-weight:600;color:${v.avgLat?'var(--accent3)':'var(--text-muted)'};">${v.avgLat ? v.avgLat.toFixed(1)+'s' : '—'}</span><span style="margin-left:4px;font-size:10.5px;color:var(--text-muted);">avg/page</span></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${flagBadge('OK', okN, 'good')}
+          ${flagBadge('REVIEW', warnN, 'warn')}
+          ${flagBadge('BAD', badN, 'bad')}
+          ${okPct > 0 ? `<span style="margin-left:auto;font-family:JetBrains Mono,monospace;font-size:10.5px;color:var(--text-muted);">${okPct}% pass</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  c.innerHTML = `
+    <div class="card-head">
+      <div class="card-title-row"><span class="card-title">Ticket Pipeline</span><span class="jp-title">伝票</span></div>
+      <div class="card-meta">${fmtTime(p.fetched)}</div>
+    </div>
+    <div class="card-body">
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.4;margin-bottom:4px;">
+        Concrete delivery ticket OCR extraction.
+        <a href="${SHEET_LINK(SHEETS.pipeline)}" target="_blank" style="color:var(--accent2);text-decoration:none;">Open sheet&nbsp;→</a>
+      </div>
+      ${variantBlocks}
+    </div>
+  `;
+}
+
 // ── PROJECT HEALTH ── Radar Chart
 function renderOverview() {
   const c = document.getElementById('card-overview');
@@ -2498,6 +2650,7 @@ function renderAll() {
   renderSubmittals();
   renderTools();
   renderACP();
+  renderPipeline();
   renderOverview();
   renderLive();
 }
